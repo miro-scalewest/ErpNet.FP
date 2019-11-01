@@ -225,8 +225,7 @@
 
             return (receiptInfo, deviceStatus);
         }
-
-
+        
         public override (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt)
         {
             var receiptInfo = new ReceiptInfo();
@@ -264,7 +263,7 @@
         {
             var receiptInfo = new ReceiptInfo();
 
-            // Abort all unfinished or erroneus receipts
+            // Abort all unfinished or erroneous receipts
             AbortReceipt();
 
             // Opening receipt
@@ -289,6 +288,36 @@
             }
 
             return (receiptInfo, deviceStatus);
+        }
+        
+        public override DeviceStatus PrintNonFiscalReceipt(NonFiscalReceipt nonFiscalReceipt)
+        {
+            // Abort all unfinished or erroneous receipts
+            AbortReceipt();
+
+            var (_, deviceStatus) = OpenNonFiscalReceipt();
+            if (!deviceStatus.Ok)
+            {
+                AbortReceipt();
+                deviceStatus.AddInfo("Error occurred while opening new non-fiscal receipt");
+                return deviceStatus;
+            }
+            
+            foreach (FreeTextItem item in nonFiscalReceipt.Items)
+            {
+                PrintNonFiscalReceiptText(item.Text, item.Bold, item.Italic, item.Underline, item.LineHeight);
+            }
+            
+            (_, deviceStatus) = CloseNonFiscalReceipt();
+            
+            if (!deviceStatus.Ok)
+            {
+                AbortReceipt();
+                deviceStatus.AddInfo("Error occurred while printing non-fiscal receipt items");
+                return deviceStatus;
+            }
+
+            return deviceStatus;
         }
 
         public override DeviceStatus PrintZReport(Credentials credentials)

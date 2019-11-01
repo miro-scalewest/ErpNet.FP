@@ -54,6 +54,13 @@
         DeviceStatus ValidateReversalReceipt(ReversalReceipt reversalReceipt);
 
         /// <summary>
+        /// Prints a non-fiscal receipt.
+        /// </summary>
+        /// <param name="nonFiscalReceipt"></param>
+        /// <returns></returns>
+        DeviceStatus PrintNonFiscalReceipt(NonFiscalReceipt nonFiscalReceipt);
+
+        /// <summary>
         /// Prints a deposit money note.
         /// </summary>
         /// <param name="amount">The deposited amount. Should be greater than 0.</param>

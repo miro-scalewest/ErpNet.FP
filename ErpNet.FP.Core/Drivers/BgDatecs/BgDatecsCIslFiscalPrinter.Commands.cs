@@ -236,6 +236,23 @@
             (null, string.Empty, StatusMessageType.Reserved)
         };
 
+        public override (string, DeviceStatus) PrintNonFiscalReceiptText(
+            string text,
+            bool bold = false,
+            bool italic = false,
+            bool underline = false,
+            LineHeight height = LineHeight.OneLine
+        )
+        {
+            // Protocol: <Height><tab>[<Data>]
+            var headerData = string.Join("\t",
+                height == LineHeight.OneLine ? 1 : 2,
+                text.WithMaxLength(Info.CommentTextMaxLength)
+            );
+
+            return Request(CommandNonFiscalReceiptText, headerData.ToString());
+        }
+
         protected override DeviceStatus ParseStatus(byte[]? status)
         {
             var deviceStatus = new DeviceStatus();

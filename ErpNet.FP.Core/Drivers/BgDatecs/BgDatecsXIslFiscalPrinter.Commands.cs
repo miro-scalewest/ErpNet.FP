@@ -301,6 +301,28 @@
 
             return Request(DatecsXCommandOpenStornoDocument, headerData.ToString());
         }
+        
+        public override (string, DeviceStatus) PrintNonFiscalReceiptText(
+            string text,
+            bool bold = false,
+            bool italic = false,
+            bool underline = false,
+            LineHeight height = LineHeight.OneLine
+        )
+        {
+            // Protocol: {Text}<SEP>{Bold}<SEP>{Italic}<SEP>{Hght}<SEP>{Underline}<SEP>{alignment}<SEP>
+            var headerData = string.Join("\t",
+                text.WithMaxLength(Info.CommentTextMaxLength),
+                bold ? 1 : 0,
+                italic ? 1 : 0,
+                height == LineHeight.OneLine ? 0 : 1,
+                underline ? 1 : 0,
+                0,
+                null // Must end with a separator
+            );
+
+            return Request(CommandNonFiscalReceiptText, headerData.ToString());
+        }
 
         public override (string, DeviceStatus) PrintDailyReport(bool zeroing = true)
         {

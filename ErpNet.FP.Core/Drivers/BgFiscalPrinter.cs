@@ -90,6 +90,15 @@
 
         public abstract (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt);
 
+        public virtual DeviceStatus PrintNonFiscalReceipt(NonFiscalReceipt nonFiscalReceipt)
+        {
+            var status = new DeviceStatus();
+
+            status.AddError("", "This device doesn't support system receipt printing yet");
+            
+            return status;
+        }
+
         public abstract DeviceStatus PrintXReport(Credentials credentials);
 
         public abstract DeviceStatus PrintZReport(Credentials credentials);
@@ -250,7 +259,6 @@
             }
             return status;
         }
-
 
 
         public virtual DeviceStatus ValidateTransferAmount(TransferAmount transferAmount)

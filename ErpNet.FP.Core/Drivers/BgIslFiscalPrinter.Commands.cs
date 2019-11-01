@@ -13,6 +13,9 @@
             CommandOpenFiscalReceipt = 0x30,
             CommandCloseFiscalReceipt = 0x38,
             CommandAbortFiscalReceipt = 0x3c,
+            CommandOpenNonFiscalReceipt = 0x26,
+            CommandNonFiscalReceiptText = 0x2a,
+            CommandCloseNonFiscalReceipt = 0x27,
             CommandFiscalReceiptTotal = 0x35,
             CommandFiscalReceiptComment = 0x36,
             CommandFiscalReceiptSale = 0x31,
@@ -221,6 +224,30 @@
                 .Append(fiscalMemorySerialNumber);
 
             return Request(CommandOpenFiscalReceipt, headerData.ToString());
+        }
+
+        public virtual (string, DeviceStatus) OpenNonFiscalReceipt()
+        {
+            return Request(CommandOpenNonFiscalReceipt);
+        }
+        
+        public virtual (string, DeviceStatus) PrintNonFiscalReceiptText(
+            string text,
+            bool bold = false,
+            bool italic = false,
+            bool underline = false,
+            LineHeight height = LineHeight.OneLine
+        )
+        {
+            return Request(
+                CommandNonFiscalReceiptText,
+                text.WithMaxLength(Info.CommentTextMaxLength)
+            );
+        }
+
+        public virtual (string, DeviceStatus) CloseNonFiscalReceipt()
+        {
+            return Request(CommandCloseNonFiscalReceipt);
         }
 
         public virtual (string, DeviceStatus) AddItem(
