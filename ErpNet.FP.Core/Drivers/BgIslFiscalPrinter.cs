@@ -294,6 +294,7 @@
         {
             // Abort all unfinished or erroneous receipts
             AbortReceipt();
+            CloseNonFiscalReceipt();
 
             var (_, deviceStatus) = OpenNonFiscalReceipt();
             if (!deviceStatus.Ok)
@@ -312,7 +313,6 @@
             
             if (!deviceStatus.Ok)
             {
-                AbortReceipt();
                 deviceStatus.AddInfo("Error occurred while printing non-fiscal receipt items");
                 return deviceStatus;
             }
