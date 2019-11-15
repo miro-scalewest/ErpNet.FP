@@ -1,4 +1,4 @@
-﻿namespace ErpNet.FP.Core.Drivers.BgDatecs
+namespace ErpNet.FP.Core.Drivers.BgDatecs
 {
     using System;
     using System.Collections.Generic;
@@ -207,7 +207,7 @@
                 itemText.WithMaxLength(Info.ItemTextMaxLength),
                 GetTaxGroupText(taxGroup),
                 unitPrice.ToString("F2", CultureInfo.InvariantCulture),
-                quantity.ToString(CultureInfo.InvariantCulture),
+                quantity == 0m ? string.Empty : quantity.ToString(CultureInfo.InvariantCulture),
                 PriceModifierTypeToProtocolValue(),
                 priceModifierValue.ToString("F2", CultureInfo.InvariantCulture),
                 "0",
@@ -301,7 +301,7 @@
 
             return Request(DatecsXCommandOpenStornoDocument, headerData.ToString());
         }
-        
+
         public override (string, DeviceStatus) PrintNonFiscalReceiptText(
             string text,
             bool bold = false,
