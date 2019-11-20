@@ -1,5 +1,10 @@
 <img src="https://github.com/erpnet/ErpNet.FP/raw/master/ErpNet.FP.Server/ErpNet.FP.thumb.png" align="right"/>
 
+## This is a fork of https://github.com/erpnet/ErpNet.FP
+This difference between this and the original is the support of non-fiscal/system receipts. The current support extends to the following device groups:
+* bg.dt.c.isl - Datecs WP-50, Datecs DP-05, Datecs DP-05B, Datecs DP-05C, Datecs DP-25, Datecs DP-35, Datecs DP-150 (tested), Datecs DP-15
+* bg.dt.x.isl - Datecs DP-25X, Datecs FMP-350X, Datecs FP-700X, Datecs WP-500X, Datecs FMP-55X, Datecs WP-50X, Datecs FP-700X (tested), Datecs DP-150X, Datecs WP-25X, Datecs FP-700XE
+
 # ErpNet.FP
 
 ErpNet.FP is a light-weight multi-platform Http server facilitating printing to fiscal printers through simple JSON Api. The library provides methods to detect, get status, print receipts, reports and other documents to fiscal printers.

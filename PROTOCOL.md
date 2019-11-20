@@ -17,6 +17,7 @@ The ErpNet.FP print server accepts documents for printing, using the JSON based 
 * `POST` [Print Fiscal Receipt (Idempotent)](#post-print-fiscal-receipt-idempotent)
 * `GET` [Get Async Task Information](#get-get-async-task-information)
 * `POST` [Print Reversal Receipt](#post-print-reversal-receipt)
+* `POST` [Print Non-Fiscal Receipt](#post-print-non-fiscal-receipt)
 * `POST` [Print Deposit Money Receipt](#post-print-deposit-money-receipt)
 * `POST` [Print Withdraw Money Receipt](#post-print-withdraw-money-receipt)
 * `POST` [Print X Report](#post-print-x-report)
@@ -517,6 +518,53 @@ The reversal receipt JSON input format is mostly the same as PrintReceipt. The c
 
 ### Response
 The same as PrintReceipt, except for the "info" section, which is not provided (not needed).
+
+## `POST` Print Non-Fiscal Receipt
+Prints a non-fiscal/system/info receipt.
+
+### Example request uri:
+```
+http://localhost:8001/printers/dt525860/nonfiscalreceipt
+```
+
+### Example request body:
+```json
+{
+  "items": [
+    {
+      "text": "Simple line 1"
+    },
+    {
+      "text": "Bold line 2",
+      "bold": true
+    },
+    {
+      "text": "Underlined line 3",
+      "underline": true
+    },
+    {
+      "text": "Italic line 4",
+      "italic": true
+    },
+    {
+      "text": "Double height line 4",
+      "lineHeight": 2
+    }
+  ]
+}
+```
+
+The required parameter in here is "text". The rest of the parameters are optional.
+ * "bold" - boolean, default: false
+ * "underline" - boolean, default: false
+ * "italic" - boolean, default: false
+ * lineHeight - int [1, 2], default: 1
+ 
+All of those can be combined but some might not work together (won't return an error, just won't apply all of them. For example, when line height is 2 and bold is true, only line height 2 will be applied and bold will be disregarded).
+Also, some devices do not support all of these, so only supported styles will be applied.
+
+### Example response:  
+The response is standard status response.
 
 ## `POST` Print Deposit Money Receipt
 Deposits the amount
