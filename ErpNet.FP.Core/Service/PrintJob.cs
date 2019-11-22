@@ -91,7 +91,7 @@
                         {
                             var nonFiscalReceipt = (NonFiscalReceipt) Document;
                             Result = Printer.PrintNonFiscalReceipt(nonFiscalReceipt);
-                        };
+                        }
                         break;
                     case PrintJobAction.Withdraw:
                         if (Document != null)
@@ -132,7 +132,12 @@
                     case PrintJobAction.SetDateTime:
                         if (Document != null)
                         {
-                            Result = Printer.SetDateTime((CurrentDateTime)Document);
+                            var dateTimeDocument = (CurrentDateTime)Document;
+                            if (dateTimeDocument.DeviceDateTime == System.DateTime.MinValue)
+                            {
+                                dateTimeDocument.DeviceDateTime = DateTime.Now;
+                            }
+                            Result = Printer.SetDateTime(dateTimeDocument);
                         };
                         break;
                     case PrintJobAction.Reset:

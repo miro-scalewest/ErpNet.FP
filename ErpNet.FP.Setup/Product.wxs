@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-    <Product Id="*" Name="HypeCR - Fiscal Print Server" Language="1033" Version="1.0.1108.1800"
+    <Product Id="*" Name="HypeCR - Fiscal Print Server" Language="1033" Version="1.0.1122.1122"
              Manufacturer="HypeSoftware"
              UpgradeCode="05e58513-a8d9-45bf-a280-d47ccb696623">
         
@@ -47,7 +47,7 @@
                 <util:InternetShortcut 
                     Id="ShortcutAtProgramMenuFolder" 
                     Directory="ProgramMenuFolder" 
-                    Name="HypeCR Admin Page" 
+                    Name="HypeCR Admin Page"
                     Target="http://localhost:8001/" 
                     IconFile="file://[#favicon.ico]" />
                 
