@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-    <Product Id="*" Name="ErpNet.FP - Fiscal Print Server" Language="1033" Version="1.0.1108.1800"
-             Manufacturer="Erp.Net And Contributors"
+    <Product Id="*" Name="HypeCR - Fiscal Print Server" Language="1033" Version="1.0.1108.1800"
+             Manufacturer="HypeSoftware"
              UpgradeCode="05e58513-a8d9-45bf-a280-d47ccb696623">
         
         <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
@@ -26,7 +26,7 @@
         <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFilesFolder">
-                <Directory Id="INSTALLFOLDER" Name="ErpNet.FP" />
+                <Directory Id="INSTALLFOLDER" Name="HypeCR" />
                 <Directory Id="ProductFilesComponentGroup" />
             </Directory>
             <Directory Id="ProgramMenuFolder">
@@ -34,7 +34,7 @@
             <Directory Id="DesktopFolder">
             </Directory>
         </Directory>
-        <Feature Id="ProductFeature" Title="ErpNet.FP.Setup" Level="1">
+        <Feature Id="ProductFeature" Title="HypeCR.Setup" Level="1">
             <ComponentGroupRef Id="ProductFilesComponentGroup" />
             <ComponentGroupRef Id="ProductComponents" />
         </Feature>
@@ -47,7 +47,7 @@
                 <util:InternetShortcut 
                     Id="ShortcutAtProgramMenuFolder" 
                     Directory="ProgramMenuFolder" 
-                    Name="ErpNet.FP Admin Page" 
+                    Name="HypeCR Admin Page" 
                     Target="http://localhost:8001/" 
                     IconFile="file://[#favicon.ico]" />
                 
@@ -55,7 +55,7 @@
                 <!-- util:InternetShortcut
                     Id="ShortcutAtDesktopFolder"
                     Directory="DesktopFolder"
-                    Name="ErpNet.FP Admin Page"
+                    Name="HypeCR Admin Page"
                     Target="http://localhost:8001/"
                     IconFile="file://[#favicon.ico]" /-->
                 
@@ -69,8 +69,8 @@
                         Id="ServiceInstaller" 
                         Type="ownProcess" 
                         Name="ErpNetFPServer"
-                        DisplayName="ErpNet.FP - Fiscal Print Server"
-                        Description="Http server for printing to fiscal printers through simple JSON Api (https://github.com/erpnet/erpnet.fp)."
+                        DisplayName="HypeCR - Fiscal Print Server"
+                        Description="Http server for printing to fiscal printers through simple JSON Api."
                         Start="auto"
                         Account="LocalSystem"
                         ErrorControl="normal" />
