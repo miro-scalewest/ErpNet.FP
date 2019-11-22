@@ -9,6 +9,7 @@
         RawRequest,
         Receipt,
         ReversalReceipt,
+        NonFiscalReceipt,
         Withdraw,
         Deposit,
         XReport,
@@ -83,6 +84,13 @@
                             {
                                 Result = validateStatus;
                             }
+                        };
+                        break;
+                    case PrintJobAction.NonFiscalReceipt:
+                        if (Document != null)
+                        {
+                            var nonFiscalReceipt = (NonFiscalReceipt) Document;
+                            Result = Printer.PrintNonFiscalReceipt(nonFiscalReceipt);
                         };
                         break;
                     case PrintJobAction.Withdraw:

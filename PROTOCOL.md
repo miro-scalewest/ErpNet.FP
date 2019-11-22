@@ -12,10 +12,12 @@ The ErpNet.FP print server accepts documents for printing, using the JSON based 
 * `GET` [Get Printer Info](#get-get-printer-info)
 * `GET` [Get Printer Status](#get-get-printer-status)
 * `POST` [Print Fiscal Receipt](#post-print-fiscal-receipt)
-* `POST` [Print Fiscal Receipt With Operator Credentials](#post-print-fiscal-receipt-with-operator-credentials)
+* `POST` [Print Fiscal Receipt (With Operator Credentials)](#post-print-fiscal-receipt-with-operator-credentials)
 * `POST` [Print Fiscal Receipt (Async)](#post-print-fiscal-receipt-async)
+* `POST` [Print Fiscal Receipt (Idempotent)](#post-print-fiscal-receipt-idempotent)
 * `GET` [Get Async Task Information](#get-get-async-task-information)
 * `POST` [Print Reversal Receipt](#post-print-reversal-receipt)
+* `POST` [Print Non-Fiscal Receipt](#post-print-non-fiscal-receipt)
 * `POST` [Print Deposit Money Receipt](#post-print-deposit-money-receipt)
 * `POST` [Print Withdraw Money Receipt](#post-print-withdraw-money-receipt)
 * `POST` [Print X Report](#post-print-x-report)
@@ -432,7 +434,7 @@ The **"asyncTimeout"** parameter specifies the timeout, after which the task is 
 NOTE: Asynchrounous execution (through the asyncTimeout parameter) is available for all print requests.
 
 ### Example request body
-It is the same as when calling Print Receipt.
+Тhe same as when calling Print Receipt.
 
 ### Example response 
 ```json
@@ -442,6 +444,31 @@ It is the same as when calling Print Receipt.
 ```
 **"taskId"** result
 The **"taskId"** result is demonstated in the example return value. It contains a single **taskId** token, which can be used to later make **"taskinfo"** requests to check its status. Bellow you will see how we will use the returned **taskId** identifier **QHC_H_7u8EaAjTB7WPEP3g** to get the status of, or result information of the printed receipt.
+
+## `POST` Print Fiscal Receipt (Idempotent)
+Prints a fiscal receipt to the printer and guarantees idempotency.
+Idempotency, if properly implemented, guarantees that the caller will have total guarantee whether the document was printed or not, even in the case of (temporary) network problems.
+
+### Idempotency
+In order to achieve idempotency, the caller should create (and provide it as а paramater) a unique taskId for each print task. 
+This would allow the caller to properly check the task status, even in the case when the inital call has not returned response properly (due to network issues, for example).
+
+It is suggested, that the taskId is a short, but unique string, serialized as base64 string.
+
+### Example request uri:
+```
+http://localhost:8001/printers/dt525860/receipt?asyncTimeout=0&taskId=QHC_H_7u8EaAjTB7WPEP3g
+```
+
+### Example request body
+Тhe same as when calling Print Receipt.
+
+### Example response 
+```json
+{
+  "taskId": "QHC_H_7u8EaAjTB7WPEP3g"
+}
+```
 
 ## `GET` Get Async Task Information
 Returns information about an async printing task. Async printing tasks are created, when **"asyncTimeout"** parameter is used on any printing task. For more information about creating async printing tasks, see the documentation of "Print Fiscal Receipt (Async)".
@@ -491,6 +518,53 @@ The reversal receipt JSON input format is mostly the same as PrintReceipt. The c
 
 ### Response
 The same as PrintReceipt, except for the "info" section, which is not provided (not needed).
+
+## `POST` Print Non-Fiscal Receipt
+Prints a non-fiscal/system/info receipt.
+
+### Example request uri:
+```
+http://localhost:8001/printers/dt525860/nonfiscalreceipt
+```
+
+### Example request body:
+```json
+{
+  "items": [
+    {
+      "text": "Simple line 1"
+    },
+    {
+      "text": "Bold line 2",
+      "bold": true
+    },
+    {
+      "text": "Underlined line 3",
+      "underline": true
+    },
+    {
+      "text": "Italic line 4",
+      "italic": true
+    },
+    {
+      "text": "Double height line 4",
+      "lineHeight": 2
+    }
+  ]
+}
+```
+
+The required parameter in here is "text". The rest of the parameters are optional.
+ * "bold" - boolean, default: false
+ * "underline" - boolean, default: false
+ * "italic" - boolean, default: false
+ * lineHeight - int [1, 2], default: 1
+ 
+All of those can be combined but some might not work together (won't return an error, just won't apply all of them. For example, when line height is 2 and bold is true, only line height 2 will be applied and bold will be disregarded).
+Also, some devices do not support all of these, so only supported styles will be applied.
+
+### Example response:  
+The response is standard status response.
 
 ## `POST` Print Deposit Money Receipt
 Deposits the amount

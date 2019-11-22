@@ -178,6 +178,36 @@
             return NotFound();
         }
 
+        // POST {id}/nonfiscalreceipt
+        [HttpPost("{id}/nonfiscalreceipt")]
+        public async Task<IActionResult> PrintNonFiscalReceipt(
+            string id,
+            [FromBody] NonFiscalReceipt receipt,
+            [FromQuery] string? taskId,
+            [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
+        {
+            if (!context.IsReady)
+            {
+                return StatusCode(StatusCodes.Status405MethodNotAllowed);
+            }
+            
+            if (context.Printers.TryGetValue(id, out IFiscalPrinter? printer))
+            {
+                var result = await context.RunAsync(
+                    new PrintJob
+                    {
+                        Printer = printer,
+                        Action = PrintJobAction.NonFiscalReceipt,
+                        Document = receipt,
+                        AsyncTimeout = asyncTimeout,
+                        TaskId = taskId
+                    });
+                return Ok(result);
+            }
+            
+            return NotFound();
+        }
+        
         // POST {id}/withdraw
         [HttpPost("{id}/withdraw")]
         public async Task<IActionResult> PrintWithdraw(

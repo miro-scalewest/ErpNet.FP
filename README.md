@@ -1,5 +1,10 @@
 <img src="https://github.com/erpnet/ErpNet.FP/raw/master/ErpNet.FP.Server/ErpNet.FP.thumb.png" align="right"/>
 
+## This is a fork of https://github.com/erpnet/ErpNet.FP
+This difference between this and the original is the support of non-fiscal/system receipts. The current support extends to the following device groups:
+* bg.dt.c.isl - Datecs WP-50, Datecs DP-05, Datecs DP-05B, Datecs DP-05C, Datecs DP-25, Datecs DP-35, Datecs DP-150 (tested), Datecs DP-15
+* bg.dt.x.isl - Datecs DP-25X, Datecs FMP-350X, Datecs FP-700X, Datecs WP-500X, Datecs FMP-55X, Datecs WP-50X, Datecs FP-700X (tested), Datecs DP-150X, Datecs WP-25X, Datecs FP-700XE
+
 # ErpNet.FP
 
 ErpNet.FP is a light-weight multi-platform Http server facilitating printing to fiscal printers through simple JSON Api. The library provides methods to detect, get status, print receipts, reports and other documents to fiscal printers.
@@ -319,8 +324,15 @@ As IDE for Windows, you can use Visual Studio 2019.
 For macOS, you can use Visual Studio for Mac 8.3.
 For Linux, or as alternative for Windows and macOs, you can use Visual Studio Code.
 
+# Support
+ErpNet.FP is free, open and works great. Most people use ErpNet.FP without any kind of support.
+
+Free support for ErpNet.FP is available on the https://www.facebook.com/groups/BgBusinessDev/. This group is monitored by a community of experts, including the core ErpNet.FP development team, who are able to resolve your problems with ErpNet.FP that you are likely to have. The main language of this group is Bulgarian, but you can post your questions in English.
+
+If ErpNet.FP is "mission critical" to your company, or do not want to discuss your issues in public, the "Annual  Maintenance Subscription" or "AMS" might serve your needs better. You can contact Stantek Solutions at support@stantek.solutions, for more information.
+
 # License
-"Simplified BSD License" or "FreeBSD License", see [LICENSE.txt]
+"BSD Zero Clause License", see [LICENSE.txt]
 
 # Contributing
 See our [Contributing] document and our [Code of Conduct] document, to learn how to help us.
