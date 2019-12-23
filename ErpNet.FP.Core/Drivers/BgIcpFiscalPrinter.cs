@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using ErpNet.FP.Core.Configuration;
 
     /// <summary>
     /// Fiscal printer using the Icp implementation of Isl Bulgaria.
@@ -10,8 +11,11 @@
     /// <seealso cref="ErpNet.FP.Drivers.BgIcpFiscalPrinter" />
     public partial class BgIcpFiscalPrinter : BgFiscalPrinter
     {
-        public BgIcpFiscalPrinter(IChannel channel, IDictionary<string, string>? options = null)
-        : base(channel, options) { }
+        public BgIcpFiscalPrinter(
+            IChannel channel, 
+            ServiceOptions serviceOptions, 
+            IDictionary<string, string>? options = null)
+        : base(channel, serviceOptions, options) { }
 
 
         public override DeviceStatusWithDateTime CheckStatus()
@@ -104,7 +108,7 @@
                         return (receiptInfo, deviceStatus);
                     }
                 }
-                else
+                else if (item.Type == ItemType.Sale)
                 {
                     if (item.PriceModifierValue < 0m)
                     {
@@ -186,6 +190,22 @@
                     if (!deviceStatus.Ok)
                     {
                         deviceStatus.AddInfo($"Error occurred in Payment {paymentNumber}");
+                        return (receiptInfo, deviceStatus);
+                    }
+                }
+            }
+
+            itemNumber = 0;
+            // Receipt items
+            foreach (var item in receipt.Items)
+            {
+                itemNumber++;
+                if (item.Type == ItemType.FooterComment)
+                {
+                    (_, deviceStatus) = AddComment(receipt.UniqueSaleNumber, item.Text);
+                    if (!deviceStatus.Ok)
+                    {
+                        deviceStatus.AddInfo($"Error occurred in Item {itemNumber}");
                         return (receiptInfo, deviceStatus);
                     }
                 }

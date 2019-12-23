@@ -5,6 +5,7 @@ namespace ErpNet.FP.Core.Drivers
     using System.Globalization;
     using System.Text;
     using System.Text.RegularExpressions;
+    using ErpNet.FP.Core.Configuration;
 
     /// <summary>
     /// Fiscal printer base class for Bg printers.
@@ -19,27 +20,25 @@ namespace ErpNet.FP.Core.Drivers
 
         public DeviceInfo Info = new DeviceInfo();
 
-        public IDictionary<PaymentType, string> PaymentTypeMappings;
+        public IDictionary<PaymentType, string> PaymentTypeMappings = new Dictionary<PaymentType, string>();
 
-        protected BgFiscalPrinter(IChannel channel, IDictionary<string, string>? options = null)
+        protected BgFiscalPrinter(
+            IChannel channel,
+            ServiceOptions serviceOptions,
+            IDictionary<string, string>? options = null)
         {
+            ServiceOptions = serviceOptions;
             Options = new Dictionary<string, string>()
                 .MergeWith(GetDefaultOptions())
                 .MergeWith(options);
             Channel = channel;
-            PaymentTypeMappings = GetPaymentTypeMappings();
         }
 
         protected abstract DeviceStatus ParseStatus(byte[]? status);
 
-        protected virtual string WithPrinterEncoding(string text)
-        {
-            return PrinterEncoding.GetString(
-                Encoding.Convert(Encoding.Default, PrinterEncoding, Encoding.Default.GetBytes(text)));
-        }
-
         protected IChannel Channel { get; }
         protected IDictionary<string, string> Options { get; }
+        public ServiceOptions ServiceOptions { get; }
 
         public abstract DeviceStatusWithCashAmount Cash(Credentials credentials);
 
@@ -77,6 +76,7 @@ namespace ErpNet.FP.Core.Drivers
 
         public ICollection<PaymentType> GetSupportedPaymentTypes()
         {
+            PaymentTypeMappings = GetPaymentTypeMappings();
             return PaymentTypeMappings.Keys;
         }
 
@@ -200,9 +200,9 @@ namespace ErpNet.FP.Core.Drivers
                 {
                     row++;
 
-                    if (payment.Amount <= 0 && payment.PaymentType != PaymentType.Change)
+                    if (payment.Amount < 0 && payment.PaymentType != PaymentType.Change)
                     {
-                        status.AddError("E403", $"Payment {row}: \"amount\" should be positive number");
+                        status.AddError("E403", $"Payment {row}: \"amount\" should be positive number or zero");
                     }
                     if (payment.Amount >= 0 && payment.PaymentType == PaymentType.Change)
                     {
@@ -246,6 +246,11 @@ namespace ErpNet.FP.Core.Drivers
             if (!status.Ok)
             {
                 return status;
+            }
+            if (reversalReceipt.Payments?.Count > 0)
+            {
+                status.AddWarning("W302", "Reversal receipt payments array should be empty. It will be ignored.");
+                reversalReceipt.Payments.Clear();
             }
             if (String.IsNullOrEmpty(reversalReceipt.ReceiptNumber))
             {

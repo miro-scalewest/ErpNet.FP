@@ -15,13 +15,15 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
 
         public override IDictionary<PaymentType, string> GetPaymentTypeMappings()
         {
-            return new Dictionary<PaymentType, string> {
+            var paymentTypeMappings = new Dictionary<PaymentType, string> {
                 { PaymentType.Cash,          "0" },
                 { PaymentType.Check,         "3" },
                 { PaymentType.Coupons,       "5" },
                 { PaymentType.ExtCoupons,    "4" },
                 { PaymentType.Card,          "1" }
             };
+            ServiceOptions.RemapPaymentTypes(Info.SerialNumber, paymentTypeMappings);
+            return paymentTypeMappings;
         }
 
         public override string GetTaxGroupText(TaxGroup taxGroup)
@@ -222,6 +224,12 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                 text.WithMaxLength(Info.CommentTextMaxLength) + "\t"
             );
         }
+
+        public override (string, DeviceStatus) FullPayment()
+        {
+            return Request(CommandFiscalReceiptTotal, "\t\t\t");
+        }
+
         public override (string, DeviceStatus) AddPayment(decimal amount, PaymentType paymentType)
         {
             // Protocol: {PaidMode}<SEP>{Amount}<SEP>{Type}<SEP>

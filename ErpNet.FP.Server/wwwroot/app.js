@@ -1,4 +1,7 @@
 ﻿var availablePrinters = {}
+var availablePaymentTypes = ['cash', 'check', 'coupons', 'ext-coupons', 'packaging', 'internal-usage', 'damage', 'card', 'bank', 'reserved1', 'reserved2'];
+var availablePrinterConstantsNames = ['itemTextMaxLength', 'commentTextMaxLength'];
+var printerProperties = {}
 
 function showAvailablePrinters() {
     $.ajax({
@@ -23,14 +26,68 @@ function showAvailablePrinters() {
                 for (var characteristic in printer) {
                     characteristics += '<li>' + characteristic + ':&nbsp;<strong>' + printer[characteristic] + '</strong></li>'
                 }
+
+                var printerProps = printerProperties[printer.serialNumber]
+
+                var printerConstantsContent =
+                    '<div class="section dark"><h5 style="padding: 0 em; margin: 0;">Printer constants override</h5></div>' +
+                    '<div class="section input-group horizontal">';
+                for (var pc in availablePrinterConstantsNames) {
+                    var printerConstantName = availablePrinterConstantsNames[pc]
+                    var printerConstantValue = ''
+                    if (printerProps) {
+                        var pv = printerProps.printerConstants[printerConstantName]
+                        if (pv) {
+                            printerConstantValue = pv
+                        }
+                    }
+                    printerConstantsContent +=
+                        '<label style="margin-right: 0;">' + printerConstantName + ':</label>' +
+                        '<input id="' + printer.serialNumber + '_pc_' + printerConstantName + '"' +
+                        ' title="Enter here the Printer Constant Value for \'' +
+                        printerConstantName + '\' payment type" style="margin-left: 0; padding: 0.2em; height: 1.5em; width: 5em;" value="' +
+                        printerConstantValue + '" onFocus="this.select()"/>&nbsp;';
+                }
+                printerConstantsContent += '</div>';
+
+                var paymentMappingsContent =
+                    '<div class="section dark"><h5 style="padding: 0 em; margin: 0;">Payment Type to the Printer Protocol\'s Raw Symbols mappings</h5></div>' + 
+                    '<div class="section input-group horizontal">';
+                var printerProps = printerProperties[printer.serialNumber]
+                for (var pi in availablePaymentTypes) {
+                    var paymentType = availablePaymentTypes[pi]
+                    var paymentMapping = ''
+                    if (printerProps) {
+                        var pm = printerProps.paymentTypeMappings[paymentType]
+                        if (pm) {
+                            paymentMapping = pm
+                        }
+                    }
+                    paymentMappingsContent +=
+                        '<label style="margin-right: 0;">' + paymentType + ':</label>' +
+                        '<input id="' + printer.serialNumber + '_pt_' + paymentType + '"' +
+                        ' title="Enter here the Printer Protocol\'s Raw Symbol for \'' +
+                        paymentType + '\' payment type" style="margin-left: 0; padding: 0.2em; height: 1.5em; width: 1.5em;" value="' +
+                        paymentMapping + '" maxlength="1" onFocus="this.select()"/>&nbsp;';
+                }
+                paymentMappingsContent += '</div>';
+
                 var section =
                     '<input type="radio" id="available-section-' + printerId + '" aria-hidden="true" name="available">' +
                     '<label style="overflow:hidden;display:inline-block;text-overflow: ellipsis;white-space: nowrap;" for="available-section-' + printerId + '" aria-hidden="true"><strong>' + printerId + '</strong></label>' +
                     '<div><ul>' + characteristics + '</ul>' +
+
                     '<button class="small primary" onclick="printZReport(\'' + printerId + '\')">Z-Report</button>' +
                     '<button class="small primary" onclick="printXReport(\'' + printerId + '\')">X-Report</button>' +
                     '<button class="small primary" onclick="resetPrinter(\'' + printerId + '\')">Reset</button>' +
                     '<button class="small primary" title="Sync the printer time with the current time on the PC" onclick="syncTime(\'' + printerId + '\')">Sync Time</button>' +
+                    '<br /><h4>Advanced properties for printer with serial number ' + printer.serialNumber + '... &#8964;</h4>' +
+                    '<div class="card fluid">' +
+                    printerConstantsContent +
+                    paymentMappingsContent +
+                    '<div class="section"><i>If you leave the Value empty, then the default value will be used. Fill only the values, that you want to override.</i></div>' +
+                    '<div class="section"><button class="small primary" onclick="applyChanges(\'' + printer.serialNumber + '\')">Apply changes</button></div>' +
+                    '</div>'+
                     '</div>'
                 this.append(section)
             }
@@ -40,6 +97,55 @@ function showAvailablePrinters() {
         error: function(xhr, type) {
             // wait more time
             setTimeout(function() { showAvailablePrinters() }, 3000);
+        }
+    })
+}
+
+function getPrinterProperties(serialNumber) {
+    for (var pi in printerProperties) {
+        var properties = printerProperties[pi]
+        if (properties.printerSerialNumber == serialNumber) {
+            return properties
+        }
+    }
+    return {}
+}
+
+function applyChanges(serialNumber) {
+    printerProperties[serialNumber] = {
+        paymentTypeMappings: {},
+        printerConstants: {}
+    }
+    for (var pti in availablePaymentTypes) {
+        var paymentType = availablePaymentTypes[pti]
+        var input = $('#' + serialNumber + '_pt_' + paymentType);
+        var v = input.val()
+        if (v) {
+            printerProperties[serialNumber].paymentTypeMappings[paymentType] = v
+        }
+    }
+    for (var pci in availablePrinterConstantsNames) {
+        var printerConstantName = availablePrinterConstantsNames[pci]
+        var input = $('#' + serialNumber + '_pc_' + printerConstantName);
+        var v = input.val()
+        if (v) {
+            printerProperties[serialNumber].printerConstants[printerConstantName] = v
+        }
+    }
+    console.log("props", printerProperties)
+    $.ajax({
+        type: 'POST',
+        url: '/service/printersprops',
+        data: JSON.stringify(printerProperties),
+        contentType: 'application/json',
+        dataType: 'json',
+        timeout: 0,
+        success: function (data) {
+            printerProperties = data
+            detectAvailablePrinters()
+        },
+        error: function (xhr, type) {
+            showToastMessage("Cannot apply changes to the printers properties.")
         }
     })
 }
@@ -105,13 +211,29 @@ function getServerVariables() {
         dataType: 'json',
         timeout: 0,
         success: function (data) {
-            console.log(data)
             $("#Version").html('ver.' + data.version)
             $("#ServerId").html('Server Id: ' + data.serverId)
             $("#AutoDetect").attr('checked', data.autoDetect ? 'checked' : null)
         },
         error: function (xhr, type) {
             showToastMessage("Cannot get server variables.")
+        }
+    })
+}
+
+function getPrinterProperties() {
+    $.ajax({
+        type: 'GET',
+        url: '/service/printersprops',
+        data: {},
+        dataType: 'json',
+        timeout: 0,
+        success: function (data) {
+            printerProperties = data
+            showPrinters()
+        },
+        error: function (xhr, type) {
+            showToastMessage("Cannot get printers properties.")
         }
     })
 }
@@ -353,5 +475,5 @@ function showToastMessage(msg) {
 
 $(function () {
     getServerVariables()
-    showPrinters()
+    getPrinterProperties()    
 })

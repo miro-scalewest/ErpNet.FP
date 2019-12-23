@@ -24,6 +24,7 @@ The ErpNet.FP print server accepts documents for printing, using the JSON based 
 * `POST` [Print Z Report](#post-print-z-report)
 * `POST` [Set Printer Date And Time](#post-set-printer-date-and-time)
 * `GET` [Get Current Cash Amount](#get-get-current-cash-amount)
+* `POST` [Post Raw Request](#post-post-raw-request)
 
 ---
 
@@ -224,7 +225,7 @@ Root elements
 * **"payments"** - list of payments.
 
 ### "items"
-Contains one entry for each fiscal or comment line items. The line items are printed in the same order on the fiscal printer. Comment lines can be intermixed with the fiscal line items.
+Contains one entry for each fiscal or comment line items with itemType="comment" or itemType="footer-comment". The line items are printed in the same order on the fiscal printer. Comment lines (itemType="comment") can be intermixed with the fiscal line items. There are another type of comments - footer comments, represented with itemType="footer-comment", which prints comments after the payment area of the fiscal receipt.
 The fiscal line **items** can have the following fields set:
 * **"text"** - the name of the product
 * **"quantiy"** - the quantity sold
@@ -282,6 +283,10 @@ NOTE: If the whole section "payments" is not provided, then the whole amount of 
       "taxGroup": 2,
       "priceModifierValue": 10,
       "priceModifierType": "discount-percent"
+    },
+    {
+      "type": "footer-comment",
+      "text": "YOU ARE WELCOME!"
     }
   ],
   "payments": [

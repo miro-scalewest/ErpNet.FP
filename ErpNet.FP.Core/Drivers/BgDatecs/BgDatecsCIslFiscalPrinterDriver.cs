@@ -3,15 +3,20 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
 {
     using System;
     using System.Collections.Generic;
+    using ErpNet.FP.Core.Configuration;
 
     public class BgDatecsCIslFiscalPrinterDriver : FiscalPrinterDriver
     {
         protected readonly string SerialNumberPrefix = "DT";
         public override string DriverName => $"bg.{SerialNumberPrefix.ToLower()}.c.isl";
 
-        public override IFiscalPrinter Connect(IChannel channel, bool autoDetect = true, IDictionary<string, string>? options = null)
+        public override IFiscalPrinter Connect(
+            IChannel channel, 
+            ServiceOptions serviceOptions, 
+            bool autoDetect = true, 
+            IDictionary<string, string>? options = null)
         {
-            var fiscalPrinter = new BgDatecsCIslFiscalPrinter(channel, options);
+            var fiscalPrinter = new BgDatecsCIslFiscalPrinter(channel, serviceOptions, options);
             var rawDeviceInfoCacheKey = $"isl.{channel.Descriptor}";
             var rawDeviceInfo = Cache.Get(rawDeviceInfoCacheKey);
             if (rawDeviceInfo == null)
@@ -23,6 +28,7 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             var (TaxIdentificationNumber, _) = fiscalPrinter.GetTaxIdentificationNumber();
             fiscalPrinter.Info.TaxIdentificationNumber = TaxIdentificationNumber;
             fiscalPrinter.Info.SupportedPaymentTypes = fiscalPrinter.GetSupportedPaymentTypes();
+            serviceOptions.ReconfigurePrinterConstants(fiscalPrinter.Info);
             return fiscalPrinter;
         }
 
@@ -42,9 +48,16 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                     throw new InvalidDeviceInfoException($"serial number must begin with {SerialNumberPrefix} and be with length 8 characters for '{DriverName}'");
                 }
 
-                if (modelName.EndsWith("X", System.StringComparison.Ordinal) || (
+                if (modelName.EndsWith("X", System.StringComparison.Ordinal) ||
+                    modelName.EndsWith("XR", System.StringComparison.Ordinal) ||
+                    modelName.EndsWith("XE", System.StringComparison.Ordinal))
+                {
+                    throw new InvalidDeviceInfoException($"incompatible with '{DriverName}'");
+                }
+
+                if (
                     !modelName.StartsWith("DP", System.StringComparison.Ordinal) &&
-                    !modelName.StartsWith("WP", System.StringComparison.Ordinal)))
+                    !modelName.StartsWith("WP", System.StringComparison.Ordinal))
                 {
                     throw new InvalidDeviceInfoException($"incompatible with '{DriverName}'");
                 }

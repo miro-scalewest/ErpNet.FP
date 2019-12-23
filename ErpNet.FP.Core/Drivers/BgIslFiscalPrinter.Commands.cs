@@ -1,4 +1,4 @@
-﻿namespace ErpNet.FP.Core.Drivers
+namespace ErpNet.FP.Core.Drivers
 {
     using System;
     using System.Globalization;
@@ -305,7 +305,7 @@
 
         public virtual (string, DeviceStatus) FullPayment()
         {
-            return Request(CommandFiscalReceiptTotal);
+            return Request(CommandFiscalReceiptTotal, "\t");
         }
 
         public virtual (string, DeviceStatus) AddPayment(decimal amount, PaymentType paymentType)
