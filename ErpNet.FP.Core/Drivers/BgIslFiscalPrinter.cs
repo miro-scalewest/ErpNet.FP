@@ -12,8 +12,8 @@ namespace ErpNet.FP.Core.Drivers
     public abstract partial class BgIslFiscalPrinter : BgFiscalPrinter
     {
         protected BgIslFiscalPrinter(
-            IChannel channel,
-            ServiceOptions serviceOptions,
+            IChannel channel, 
+            ServiceOptions serviceOptions, 
             IDictionary<string, string>? options = null)
         : base(channel, serviceOptions, options) { }
 
@@ -122,6 +122,7 @@ namespace ErpNet.FP.Core.Drivers
                         try
                         {
                             (_, deviceStatus) = AddItem(
+                                item.Department,
                                 item.Text,
                                 item.UnitPrice,
                                 item.TaxGroup,
@@ -135,6 +136,14 @@ namespace ErpNet.FP.Core.Drivers
                             deviceStatus.AddError(e.Code, e.Message);
                             break;
                         }
+                    }
+                    else if (item.Type == ItemType.SurchargeAmount)
+                    {
+                        (_, deviceStatus) = SubtotalChangeAmount(item.Amount);
+                    }
+                    else if (item.Type == ItemType.DiscountAmount)
+                    {                        
+                        (_, deviceStatus) = SubtotalChangeAmount(-item.Amount);
                     }
                     if (!deviceStatus.Ok)
                     {
@@ -282,7 +291,7 @@ namespace ErpNet.FP.Core.Drivers
         {
             var receiptInfo = new ReceiptInfo();
 
-            // Abort all unfinished or erroneous receipts
+            // Abort all unfinished or erroneus receipts
             AbortReceipt();
 
             // Opening receipt
@@ -308,7 +317,7 @@ namespace ErpNet.FP.Core.Drivers
 
             return (receiptInfo, deviceStatus);
         }
-
+        
         public override DeviceStatus PrintNonFiscalReceipt(NonFiscalReceipt nonFiscalReceipt)
         {
             // Abort all unfinished or erroneous receipts
@@ -348,6 +357,12 @@ namespace ErpNet.FP.Core.Drivers
         public override DeviceStatus PrintXReport(Credentials credentials)
         {
             var (_, status) = PrintDailyReport(false);
+            return status;
+        }
+
+        public override DeviceStatus PrintDuplicate(Credentials credentials)
+        {
+            var (_, status) = Request(CommandPrintLastReceiptDuplicate, "1");
             return status;
         }
 

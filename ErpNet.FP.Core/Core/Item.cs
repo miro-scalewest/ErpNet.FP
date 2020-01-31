@@ -11,7 +11,11 @@
         [EnumMember(Value = "comment")]
         Comment,
         [EnumMember(Value = "footer-comment")]
-        FooterComment
+        FooterComment,
+        [EnumMember(Value = "surcharge-amount")]
+        SurchargeAmount,
+        [EnumMember(Value = "discount-amount")]
+        DiscountAmount
     }
 
     /// <summary>
@@ -81,7 +85,6 @@
         /// <value>
         /// The text.
         /// </value>
-        [JsonProperty(Required = Required.Always)]
         public string Text { get; set; } = "";
 
         /// <summary>
@@ -91,6 +94,14 @@
         /// The tax group.
         /// </value>        
         public TaxGroup TaxGroup { get; set; } = TaxGroup.Unspecified;
+
+        /// <summary>
+        /// Gets or sets the department. Department 0 means no department.
+        /// </summary>
+        /// <value>
+        /// The department.
+        /// </value>
+        public int Department { get; set; } = 0;
 
         /// <summary>
         /// Gets or sets the quantity.
@@ -107,6 +118,14 @@
         /// The unit price.
         /// </value>
         public decimal UnitPrice { get; set; } = 0m;
+
+        /// <summary>
+        /// Gets or sets the amount. Used in discount and surcharge amount types.
+        /// </summary>
+        /// <value>
+        /// The amount of discount or the amount of surcharge
+        /// </value>
+        public decimal Amount { get; set; } = 0m;
 
         /// <summary>
         /// Gets or sets the discounts, surcharges.

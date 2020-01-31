@@ -156,7 +156,6 @@ Eager to try?
 You can list and [download the binaries for ErpNet.FP.Server]:
 
 ### Windows 32/64 Service Installer (.MSI) ** New **
-- All Windows versions, from Windows XP SP2 and up are supported. 
 - [Prerequisites for ErpNet.FP on Windows](https://docs.microsoft.com/en-us/dotnet/core/windows-prerequisites).
 - There is no need for .Net installation. 
 - Everything that is needed is included in the MSI installer. 
@@ -168,7 +167,6 @@ The installer unpacks and installs a Windows service, called "ErpNet.FP".
 There is no UI, but when the service is running in the default configuration, you can browse the Admin page at http://localhost:8001.
 
 ### Windows 32/64 bit, folder install
-- All Windows versions from Windows XP SP2 and up are supported. 
 - [Prerequisites for ErpNet.FP on Windows](https://docs.microsoft.com/en-us/dotnet/core/windows-prerequisites).
 - There is no need for .Net installation. 
 - Everything that is needed is included in the Zip files below. 
@@ -333,7 +331,7 @@ ErpNet.FP is free, open and works great. Most people use ErpNet.FP without any k
 
 Free support for ErpNet.FP is available on the https://www.facebook.com/groups/BgBusinessDev/. This group is monitored by a community of experts, including the core ErpNet.FP development team, who are able to resolve your problems with ErpNet.FP that you are likely to have. The main language of this group is Bulgarian, but you can post your questions in English.
 
-If ErpNet.FP is "mission critical" to your company, or do not want to discuss your issues in public, the "Annual  Maintenance Subscription" or "AMS" might serve your needs better. You can contact Stantek Solutions at support@stantek.solutions, for more information.
+If ErpNet.FP is "mission critical" to your company, or do not want to discuss your issues in public, the "Annual  Maintenance Subscription" or "AMS" might serve your needs better. You can contact Stantek Solutions at support@stantek.solutions, or at phones +359 888 501 511, +359 88 99 06660 to get more information about the support offer.
 
 # License
 "BSD Zero Clause License", see [LICENSE.txt]

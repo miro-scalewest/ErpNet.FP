@@ -42,6 +42,17 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             };
         }
 
+        public override (string, DeviceStatus) SubtotalChangeAmount(Decimal amount)
+        {
+            // {Print}<SEP>{Display}<SEP>{DiscountType}<SEP>{DiscountValue}<SEP>
+            return Request(CommandSubtotal, string.Join("\t",
+                "1",
+                "0",
+                amount < 0 ? "4" : "3",
+                Math.Abs(amount).ToString("F2", CultureInfo.InvariantCulture),
+                ""));
+        }
+
         public override (string, DeviceStatus) SetDeviceDateTime(DateTime dateTime)
         {
             return Request(CommandSetDateTime, dateTime.ToString("dd-MM-yy HH:mm:ss\t", CultureInfo.InvariantCulture));
@@ -184,6 +195,7 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
         }
 
         public override (string, DeviceStatus) AddItem(
+            int department,
             string itemText,
             decimal unitPrice,
             TaxGroup taxGroup,
@@ -212,7 +224,7 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                 quantity == 0m ? string.Empty : quantity.ToString(CultureInfo.InvariantCulture),
                 PriceModifierTypeToProtocolValue(),
                 priceModifierValue.ToString("F2", CultureInfo.InvariantCulture),
-                "0",
+                department.ToString(),
                 "");
             return Request(CommandFiscalReceiptSale, itemData);
         }
@@ -450,4 +462,6 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
         }
 
     }
+
+    
 }

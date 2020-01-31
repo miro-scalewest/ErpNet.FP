@@ -122,6 +122,7 @@
                     {
                         (_, deviceStatus) = AddItem(
                             receipt.UniqueSaleNumber,
+                            item.Department,
                             item.Text,
                             item.UnitPrice,
                             item.TaxGroup,
@@ -283,6 +284,12 @@
         public override DeviceStatus PrintXReport(Credentials credentials)
         {
             var (_, status) = PrintDailyReport(false);
+            return status;
+        }
+
+        public override DeviceStatus PrintDuplicate(Credentials credentials)
+        {
+            var (_, status) = Request("AA");
             return status;
         }
 

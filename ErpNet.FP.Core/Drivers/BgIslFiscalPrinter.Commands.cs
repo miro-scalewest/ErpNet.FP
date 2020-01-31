@@ -25,6 +25,8 @@ namespace ErpNet.FP.Core.Drivers
             CommandGetReceiptStatus = 0x4c,
             CommandGetLastDocumentNumber = 0x71,
             CommandGetTaxIdentificationNumber = 0x63,
+            CommandPrintLastReceiptDuplicate = 0x6D,
+            CommandSubtotal = 0x33,
             CommandReadLastReceiptQRCodeData = 0x74;
 
         public override string GetReversalReasonText(ReversalReason reversalReason)
@@ -51,6 +53,10 @@ namespace ErpNet.FP.Core.Drivers
         public virtual (string, DeviceStatus) GetLastDocumentNumber(string closeReceiptResponse)
         {
             return Request(CommandGetLastDocumentNumber);
+        }
+        public virtual (string, DeviceStatus) SubtotalChangeAmount(Decimal amount)
+        {
+            return Request(CommandSubtotal, $"10;{amount.ToString("F2", CultureInfo.InvariantCulture)}");
         }
 
         public virtual (decimal?, DeviceStatus) GetReceiptAmount()
@@ -251,6 +257,7 @@ namespace ErpNet.FP.Core.Drivers
         }
 
         public virtual (string, DeviceStatus) AddItem(
+            int department,
             string itemText,
             decimal unitPrice,
             TaxGroup taxGroup,
@@ -258,10 +265,20 @@ namespace ErpNet.FP.Core.Drivers
             decimal priceModifierValue = 0,
             PriceModifierType priceModifierType = PriceModifierType.None)
         {
-            var itemData = new StringBuilder()
-                .Append(itemText.WithMaxLength(Info.ItemTextMaxLength))
-                .Append('\t').Append(GetTaxGroupText(taxGroup))
-                .Append(unitPrice.ToString("F2", CultureInfo.InvariantCulture));
+            var itemData = new StringBuilder();
+            if (department <= 0) {
+                itemData
+                    .Append(itemText.WithMaxLength(Info.ItemTextMaxLength))
+                    .Append('\t').Append(GetTaxGroupText(taxGroup))
+                    .Append(unitPrice.ToString("F2", CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                itemData
+                    .Append(itemText.WithMaxLength(Info.ItemTextMaxLength))
+                    .Append('\t').Append(department).Append('\t')
+                    .Append(unitPrice.ToString("F2", CultureInfo.InvariantCulture));
+            }
             if (quantity != 0)
             {
                 itemData

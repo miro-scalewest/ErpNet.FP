@@ -47,18 +47,18 @@
         (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt);
 
         /// <summary>
-        /// Validates the reversal receipt object
-        /// </summary>
-        /// <param name="reversalReceipt"></param>
-        /// <returns></returns>
-        DeviceStatus ValidateReversalReceipt(ReversalReceipt reversalReceipt);
-
-        /// <summary>
         /// Prints a non-fiscal receipt.
         /// </summary>
         /// <param name="nonFiscalReceipt"></param>
         /// <returns></returns>
         DeviceStatus PrintNonFiscalReceipt(NonFiscalReceipt nonFiscalReceipt);
+
+        /// <summary>
+        /// Validates the reversal receipt object
+        /// </summary>
+        /// <param name="reversalReceipt"></param>
+        /// <returns></returns>
+        DeviceStatus ValidateReversalReceipt(ReversalReceipt reversalReceipt);
 
         /// <summary>
         /// Prints a deposit money note.
@@ -88,6 +88,11 @@
         /// Prints a xreport.
         /// </summary>
         DeviceStatus PrintXReport(Credentials credentials);
+
+        /// <summary>
+        /// Prints duplicate of the last fiscal receipt.
+        /// </summary>
+        DeviceStatus PrintDuplicate(Credentials credentials);
 
         /// <summary>
         /// Raw request.

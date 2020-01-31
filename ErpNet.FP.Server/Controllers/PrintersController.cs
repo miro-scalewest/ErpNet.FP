@@ -1,4 +1,4 @@
-﻿namespace ErpNet.FP.Server.Controllers
+namespace ErpNet.FP.Server.Controllers
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;
@@ -207,7 +207,7 @@
             
             return NotFound();
         }
-        
+
         // POST {id}/withdraw
         [HttpPost("{id}/withdraw")]
         public async Task<IActionResult> PrintWithdraw(
@@ -337,6 +337,33 @@
                     {
                         Printer = printer,
                         Action = PrintJobAction.XReport,
+                        Document = null,
+                        AsyncTimeout = asyncTimeout,
+                        TaskId = taskId
+                    });
+                return Ok(result);
+            }
+            return NotFound();
+        }
+
+        // POST {id}/duplicate
+        [HttpPost("{id}/duplicate")]
+        public async Task<IActionResult> PrintDuplicate(
+            string id,
+            [FromQuery] string? taskId,
+            [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
+        {
+            if (!context.IsReady)
+            {
+                return StatusCode(StatusCodes.Status405MethodNotAllowed);
+            }
+            if (context.Printers.TryGetValue(id, out IFiscalPrinter? printer))
+            {
+                var result = await context.RunAsync(
+                    new PrintJob
+                    {
+                        Printer = printer,
+                        Action = PrintJobAction.Duplicate,
                         Document = null,
                         AsyncTimeout = asyncTimeout,
                         TaskId = taskId
