@@ -4,6 +4,7 @@ namespace ErpNet.FP.Server.Controllers
     using System.Threading.Tasks;
     using ErpNet.FP.Core;
     using ErpNet.FP.Core.Service;
+    using ErpNet.FP.Core.Drivers;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
 
@@ -65,6 +66,7 @@ namespace ErpNet.FP.Server.Controllers
         public async Task<IActionResult> Cash(
             string id,
             [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
             [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
         {
             if (!context.IsReady)
@@ -80,6 +82,7 @@ namespace ErpNet.FP.Server.Controllers
                         Action = PrintJobAction.Cash,
                         Document = null,
                         AsyncTimeout = asyncTimeout,
+                        Timeout = timeout == null ? 0 : timeout.ParseTimeout(),
                         TaskId = taskId
                     });
                 return Ok(result);
@@ -100,6 +103,7 @@ namespace ErpNet.FP.Server.Controllers
             string id,
             [FromBody] RequestFrame requestFrame,
             [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
             [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
         {
             if (!context.IsReady)
@@ -115,6 +119,7 @@ namespace ErpNet.FP.Server.Controllers
                         Action = PrintJobAction.RawRequest,
                         Document = requestFrame,
                         AsyncTimeout = asyncTimeout,
+                        Timeout = timeout == null ? 0 : timeout.ParseTimeout(),
                         TaskId = taskId
                     });
                 return Ok(result);
@@ -128,6 +133,7 @@ namespace ErpNet.FP.Server.Controllers
             string id,
             [FromBody] Receipt receipt,
             [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
             [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
         {
             if (!context.IsReady)
@@ -143,6 +149,7 @@ namespace ErpNet.FP.Server.Controllers
                         Action = PrintJobAction.Receipt,
                         Document = receipt,
                         AsyncTimeout = asyncTimeout,
+                        Timeout = timeout == null ? 0 : timeout.ParseTimeout(),
                         TaskId = taskId
                     });
                 return Ok(result);
@@ -156,6 +163,7 @@ namespace ErpNet.FP.Server.Controllers
             string id,
             [FromBody] ReversalReceipt reversalReceipt,
             [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
             [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
         {
             if (!context.IsReady)
@@ -171,6 +179,7 @@ namespace ErpNet.FP.Server.Controllers
                         Action = PrintJobAction.ReversalReceipt,
                         Document = reversalReceipt,
                         AsyncTimeout = asyncTimeout,
+                        Timeout = timeout == null ? 0 : timeout.ParseTimeout(), 
                         TaskId = taskId
                     });
                 return Ok(result);
@@ -214,6 +223,7 @@ namespace ErpNet.FP.Server.Controllers
             string id,
             [FromBody] TransferAmount withdraw,
             [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
             [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
         {
             if (!context.IsReady)
@@ -229,6 +239,7 @@ namespace ErpNet.FP.Server.Controllers
                         Action = PrintJobAction.Withdraw,
                         Document = withdraw,
                         AsyncTimeout = asyncTimeout,
+                        Timeout = timeout == null ? 0 : timeout.ParseTimeout(),
                         TaskId = taskId
                     });
                 return Ok(result);
@@ -242,6 +253,7 @@ namespace ErpNet.FP.Server.Controllers
             string id,
             [FromBody] TransferAmount deposit,
             [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
             [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
         {
             if (!context.IsReady)
@@ -257,6 +269,7 @@ namespace ErpNet.FP.Server.Controllers
                         Action = PrintJobAction.Deposit,
                         Document = deposit,
                         AsyncTimeout = asyncTimeout,
+                        Timeout = timeout == null ? 0 : timeout.ParseTimeout(),
                         TaskId = taskId
                     });
                 return Ok(result);
@@ -270,6 +283,7 @@ namespace ErpNet.FP.Server.Controllers
             string id,
             [FromBody] CurrentDateTime datetime,
             [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
             [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
         {
             if (!context.IsReady)
@@ -285,6 +299,7 @@ namespace ErpNet.FP.Server.Controllers
                         Action = PrintJobAction.SetDateTime,
                         Document = datetime,
                         AsyncTimeout = asyncTimeout,
+                        Timeout = timeout == null ? 0 : timeout.ParseTimeout(),
                         TaskId = taskId
                     });
                 return Ok(result);
@@ -297,6 +312,7 @@ namespace ErpNet.FP.Server.Controllers
         public async Task<IActionResult> PrintZReport(
             string id,
             [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
             [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
         {
             if (!context.IsReady)
@@ -312,6 +328,7 @@ namespace ErpNet.FP.Server.Controllers
                         Action = PrintJobAction.ZReport,
                         Document = null,
                         AsyncTimeout = asyncTimeout,
+                        Timeout = timeout == null ? 0 : timeout.ParseTimeout(),
                         TaskId = taskId
                     });
                 return Ok(result);
@@ -324,6 +341,7 @@ namespace ErpNet.FP.Server.Controllers
         public async Task<IActionResult> PrintXReport(
             string id,
             [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
             [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
         {
             if (!context.IsReady)
@@ -339,6 +357,7 @@ namespace ErpNet.FP.Server.Controllers
                         Action = PrintJobAction.XReport,
                         Document = null,
                         AsyncTimeout = asyncTimeout,
+                        Timeout = timeout == null ? 0 : timeout.ParseTimeout(),
                         TaskId = taskId
                     });
                 return Ok(result);
@@ -351,6 +370,7 @@ namespace ErpNet.FP.Server.Controllers
         public async Task<IActionResult> PrintDuplicate(
             string id,
             [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
             [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
         {
             if (!context.IsReady)
@@ -366,6 +386,7 @@ namespace ErpNet.FP.Server.Controllers
                         Action = PrintJobAction.Duplicate,
                         Document = null,
                         AsyncTimeout = asyncTimeout,
+                        Timeout = timeout == null ? 0 : timeout.ParseTimeout(),
                         TaskId = taskId
                     });
                 return Ok(result);
@@ -378,6 +399,7 @@ namespace ErpNet.FP.Server.Controllers
         public async Task<IActionResult> Reset(
             string id,
             [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
             [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
         {
             if (!context.IsReady)
@@ -393,6 +415,7 @@ namespace ErpNet.FP.Server.Controllers
                         Action = PrintJobAction.Reset,
                         Document = null,
                         AsyncTimeout = asyncTimeout,
+                        Timeout = timeout == null ? 0 : timeout.ParseTimeout(),
                         TaskId = taskId
                     });
                 return Ok(result);

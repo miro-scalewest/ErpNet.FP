@@ -1,5 +1,6 @@
 ﻿namespace ErpNet.FP.Server.Controllers
 {
+    using System;
     using System.Collections.Generic;
     using System.Reflection;
     using ErpNet.FP.Core.Configuration;
@@ -7,6 +8,7 @@
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Hosting;
+    using Serilog;
 
     // PrintersController, example: //host/service/[controller]
     [Route("[controller]")]
@@ -114,5 +116,14 @@
             }
             return StatusCode(StatusCodes.Status423Locked);
         }
+
+        // POST restart
+        [HttpPost("restart")]
+        public void RestartService()
+        {
+            Log.Information("Restarting service");
+            Environment.Exit(1);
+        }
+
     }
 }

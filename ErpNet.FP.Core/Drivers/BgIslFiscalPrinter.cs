@@ -243,10 +243,11 @@ namespace ErpNet.FP.Core.Drivers
             // Get receipt number
             string lastDocumentNumberResponse;
             (lastDocumentNumberResponse, deviceStatus) = GetLastDocumentNumber(closeReceiptResponse);
-            if (!deviceStatus.Ok)
+            if (!deviceStatus.Ok || String.IsNullOrWhiteSpace(lastDocumentNumberResponse))
             {
                 AbortReceipt();
-                deviceStatus.AddInfo($"Error occurred while reading last document number");
+                deviceStatus.AddInfo($"Error occurred while reading last receipt number");
+                deviceStatus.AddError("E409", $"Last receipt number is empty");
                 return (receiptInfo, deviceStatus);
             }
             receiptInfo.ReceiptNumber = lastDocumentNumberResponse;

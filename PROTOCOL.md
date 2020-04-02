@@ -256,13 +256,14 @@ The item with type "comment" and "footer-comment" can have the following fields 
 * **"text"** - the text of the comment
 
 ### "payments"
-This section contains the payment types and amounts for each payment.
+This section contains the payment types and amounts for each payment. 
+
+NOTE: If the whole section "payments" is not provided, then the whole amount of the receipt is printed as cash payment.
 
 NOTE: Multiple different payment types and amounts are allowed for one receipt.
 
 Each element in this section can have the following properties:
-* **"amount"** - the amount paid. If this is skipped, the full amount of the receipt is allocated to this payment.
-NOTE: If the whole section "payments" is not provided, then the whole amount of the receipt is printed as cash payment.
+* **"amount"** - the amount paid. 
 
 * **"paymentType"** - one of: 
 * * **"cash"** - this is the default payment type if no payment type is specified, NRA mapping "SCash"
@@ -595,6 +596,8 @@ The response is standard status response.
 ## `POST` Print Deposit Money Receipt
 Deposits the amount
 
+Warning: Be aware, in Tremol devices, you should present credentials - operator and operatorPassword as in receipt request.
+
 ### Example request uri:
 ```
 http://localhost:8001/printers/dt517985/deposit
@@ -611,6 +614,8 @@ The response is standard status response.
 
 ## `POST` Print Withdraw Money Receipt
 Withdraws the amount
+
+Warning: Be aware, in Tremol devices, you should present credentials - operator and operatorPassword as in receipt request.
 
 ### Example request uri:
 ```
@@ -670,7 +675,9 @@ The response is standard status response.
 
 ## `GET` Get Current Cash Amount
 Gets the current cash amount registered in the fiscal printer. 
-The request is `POST` because you are allowed to provide "taskId" in the body of the request.
+You can provide taskId as URL query parameter.
+
+Warning: Be aware, in Tremol devices, you should present credentials - operator and operatorPassword as in receipt request.
 
 ### Example request uri:
 ```

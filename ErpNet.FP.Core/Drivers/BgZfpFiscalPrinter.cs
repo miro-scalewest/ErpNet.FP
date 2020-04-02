@@ -279,6 +279,7 @@
         protected virtual (ReceiptInfo, DeviceStatus) GetLastReceiptInfo()
         {
             // QR Code Data Format: <FM Number>*<Receipt Number>*<Receipt Date>*<Receipt Hour>*<Receipt Amount>
+            // 50163145*000002*2020-01-28*15:29:00*30.00
             var (qrCodeData, deviceStatus) = GetLastReceiptQRCodeData();
             if (!deviceStatus.Ok)
             {
@@ -287,13 +288,42 @@
             }
 
             var qrCodeFields = qrCodeData.Split('*');
-            return (new ReceiptInfo
+            decimal receiptAmount;
+            try
             {
-                ReceiptNumber = qrCodeFields[1],
-                ReceiptDateTime = DateTime.ParseExact(string.Format(
+                receiptAmount = decimal.Parse(qrCodeFields[4], CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                deviceStatus.AddInfo($"Error occurred while parsing last receipt QR code data (receipt amount)");
+                return (new ReceiptInfo(), deviceStatus);
+            }
+            DateTime receiptDateTime;
+            try
+            {
+                receiptDateTime = DateTime.ParseExact(string.Format(
                     $"{qrCodeFields[2]} {qrCodeFields[3]}"),
                     "yyyy-MM-dd HH:mm:ss",
-                    System.Globalization.CultureInfo.InvariantCulture)
+                    CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                deviceStatus.AddInfo($"Error occurred while parsing last receipt QR code data (receipt date and time)");
+                return (new ReceiptInfo(), deviceStatus);
+            }
+            string receiptNumber = qrCodeFields[1];
+            if (String.IsNullOrWhiteSpace(receiptNumber))
+            {
+                deviceStatus.AddInfo($"Error occurred while reading last receipt number");
+                deviceStatus.AddError("E409", $"Last receipt number is empty");
+                return (new ReceiptInfo(), deviceStatus);
+            }
+            return (new ReceiptInfo
+            {
+                FiscalMemorySerialNumber = qrCodeFields[0],
+                ReceiptAmount = receiptAmount,
+                ReceiptNumber = receiptNumber,
+                ReceiptDateTime = receiptDateTime
             }, deviceStatus);
         }
 
