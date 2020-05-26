@@ -65,7 +65,7 @@ POST /printers/dt517985/receipt
 }
 ```
 ## For More Information
-For more information, see the [full documentation of the protocol](https://github.com/erpnet/ErpNet.FP/blob/master/PROTOCOL.md).
+For more information, see the [full documentation of the protocol](https://github.com/f1mp3r/ErpNet.FP/blob/master/PROTOCOL.md).
 
 ## Response - Interpreting The Results
 The most important result is the "ok" field. It contains "true" when the POST operation was successful, otherwise - "false".
@@ -220,7 +220,7 @@ It contains debug information for every event that occured while using the servi
 
 ## Server Configuration
 The server configuration options are located in a file, called "appsettings.json". 
-For more information, see [Configuration](https://github.com/erpnet/ErpNet.FP/blob/master/Config.md).
+For more information, see [Configuration](https://github.com/f1mp3r/ErpNet.FP/blob/master/Config.md).
 It is recommended that you use the Admin page, or through /service API to edit the settings in this file rather than edit it directly.
 
 ## Fiscal Printer Setup

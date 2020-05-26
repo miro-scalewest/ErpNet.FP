@@ -99,7 +99,6 @@ namespace ErpNet.FP.Core.Drivers
             return status;
         }
 
-
         public abstract DeviceStatus PrintXReport(Credentials credentials);
 
         public abstract DeviceStatus PrintZReport(Credentials credentials);
@@ -310,8 +309,6 @@ namespace ErpNet.FP.Core.Drivers
             }
             return status;
         }
-
-
 
         public virtual DeviceStatus ValidateTransferAmount(TransferAmount transferAmount)
         {
