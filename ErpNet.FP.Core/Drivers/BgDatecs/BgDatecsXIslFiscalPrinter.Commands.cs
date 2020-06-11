@@ -15,13 +15,15 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
 
         public override IDictionary<PaymentType, string> GetPaymentTypeMappings()
         {
-            return new Dictionary<PaymentType, string> {
+            var paymentTypeMappings = new Dictionary<PaymentType, string> {
                 { PaymentType.Cash,          "0" },
                 { PaymentType.Check,         "3" },
                 { PaymentType.Coupons,       "5" },
                 { PaymentType.ExtCoupons,    "4" },
                 { PaymentType.Card,          "1" }
             };
+            ServiceOptions.RemapPaymentTypes(Info.SerialNumber, paymentTypeMappings);
+            return paymentTypeMappings;
         }
 
         public override string GetTaxGroupText(TaxGroup taxGroup)
@@ -38,6 +40,17 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                 TaxGroup.TaxGroup8 => "8",
                 _ => throw new StandardizedStatusMessageException($"Tax group {taxGroup} unsupported", "E411"),
             };
+        }
+
+        public override (string, DeviceStatus) SubtotalChangeAmount(Decimal amount)
+        {
+            // {Print}<SEP>{Display}<SEP>{DiscountType}<SEP>{DiscountValue}<SEP>
+            return Request(CommandSubtotal, string.Join("\t",
+                "1",
+                "0",
+                amount < 0 ? "4" : "3",
+                Math.Abs(amount).ToString("F2", CultureInfo.InvariantCulture),
+                ""));
         }
 
         public override (string, DeviceStatus) SetDeviceDateTime(DateTime dateTime)
@@ -182,6 +195,7 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
         }
 
         public override (string, DeviceStatus) AddItem(
+            int department,
             string itemText,
             decimal unitPrice,
             TaxGroup taxGroup,
@@ -210,7 +224,7 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                 quantity == 0m ? string.Empty : quantity.ToString(CultureInfo.InvariantCulture),
                 PriceModifierTypeToProtocolValue(),
                 priceModifierValue.ToString("F2", CultureInfo.InvariantCulture),
-                "0",
+                department.ToString(),
                 "");
             return Request(CommandFiscalReceiptSale, itemData);
         }
@@ -222,6 +236,12 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                 text.WithMaxLength(Info.CommentTextMaxLength) + "\t"
             );
         }
+
+        public override (string, DeviceStatus) FullPayment()
+        {
+            return Request(CommandFiscalReceiptTotal, "\t\t\t");
+        }
+
         public override (string, DeviceStatus) AddPayment(decimal amount, PaymentType paymentType)
         {
             // Protocol: {PaidMode}<SEP>{Amount}<SEP>{Type}<SEP>
@@ -442,4 +462,6 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
         }
 
     }
+
+    
 }

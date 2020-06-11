@@ -24,6 +24,8 @@ The ErpNet.FP print server accepts documents for printing, using the JSON based 
 * `POST` [Print Z Report](#post-print-z-report)
 * `POST` [Set Printer Date And Time](#post-set-printer-date-and-time)
 * `GET` [Get Current Cash Amount](#get-get-current-cash-amount)
+* `POST` [Post Raw Request](#post-post-raw-request)
+* `POST` [Print Last Receipt's Duplicate](#post-print-last-receipts-duplicate)
 
 ---
 
@@ -224,27 +226,44 @@ Root elements
 * **"payments"** - list of payments.
 
 ### "items"
-Contains one entry for each fiscal or comment line items. The line items are printed in the same order on the fiscal printer. Comment lines can be intermixed with the fiscal line items.
-The fiscal line **items** can have the following fields set:
+Contains the items sold. 
+The line items are printed in the same order on the fiscal printer. 
+Each item record can be of different type. The type is specified in the "type" field and can be one of:
+* **"sale"** - specifies items sold (default, can be omitted)
+* **"discount-amount"** - specifies discount amount on the current sub-total 
+* **"surcharge-amount"** - specifiessurcharge amount on the current sub-total 
+* **"comment"** - comment line (printer with #)
+* **"footer-comment"** - comment, printed after the payment area of the receipt
+
+The item with type "sale" can have the following fields set:
 * **"text"** - the name of the product
-* **"quantiy"** - the quantity sold
+* **"quantiy"** - *(optional)* the quantity sold. When not specified, some fiscal printers might be able to omit the quantity completely, while others might print "1". For calculation purposes, omitting quantity means 1.
 * **"unitPrice"** - the unit price, not including any discounts/markups
 * **"taxGroup"** - the government regulated tax group. An integer from 1 to 8.
-* **"priceModifierValue"** - modifies the total amount of the line according to the setting of "priceModifierType"
-* **"priceModifierType"** - can be one of: 
+* **"department"** - *(optional)* the department number. A positive integer. 
+* **"priceModifierValue"** - *(optional)* modifies the total amount of the line according to the setting of "priceModifierType"
+* **"priceModifierType"** - *(optional)* can be one of: 
 * * **"discount-percent"**
 * * **"discount-amount"**
 * * **"surcharge-percent"**
 * * **"surcharge-amount"**
 
+The item with type "discount-amount" and "surcharge-amount" can have the following fields set:
+* **"amount"** - the amount that will be substracted or added to the subtotal
+**Warning**: Check the value of "supportsSubTotalAmountModifiers" in your device info, to check whether your device supports subtotal modifiers by amount.
+
+The item with type "comment" and "footer-comment" can have the following fields set:
+* **"text"** - the text of the comment
+
 ### "payments"
-This section contains the payment types and amounts for each payment.
+This section contains the payment types and amounts for each payment. 
+
+NOTE: If the whole section "payments" is not provided, then the whole amount of the receipt is printed as cash payment.
 
 NOTE: Multiple different payment types and amounts are allowed for one receipt.
 
 Each element in this section can have the following properties:
-* **"amount"** - the amount paid. If this is skipped, the full amount of the receipt is allocated to this payment.
-NOTE: If the whole section "payments" is not provided, then the whole amount of the receipt is printed as cash payment.
+* **"amount"** - the amount paid. 
 
 * **"paymentType"** - one of: 
 * * **"cash"** - this is the default payment type if no payment type is specified, NRA mapping "SCash"
@@ -282,11 +301,19 @@ NOTE: If the whole section "payments" is not provided, then the whole amount of 
       "taxGroup": 2,
       "priceModifierValue": 10,
       "priceModifierType": "discount-percent"
+    },
+    {
+        "type": "discount-amount",
+        "amount": 10
+    },
+    {
+      "type": "footer-comment",
+      "text": "YOU ARE WELCOME!"
     }
   ],
   "payments": [
     {
-      "amount": 30,
+      "amount": 20,
       "paymentType": "cash"
     }
   ]
@@ -309,7 +336,7 @@ NOTE: If the whole section "payments" is not provided, then the whole amount of 
   ],
   "receiptNumber": "0000085",
   "receiptDateTime": "2019-05-17T13:55:18",
-  "receiptAmount": 30,
+  "receiptAmount": 20,
   "fiscalMemorySerialNumber": "02517985"
 }
 ```
@@ -514,7 +541,7 @@ The reversal receipt JSON input format is mostly the same as PrintReceipt. The c
 * **"reason"** - the reason for the reversal. One of: 
 * * **"operator-error"**
 * * **"refund"**
-* * **"tax-base-reduction"**.
+* * **"taxbase-reduction"**. (it should be "tax-base-reduction", but because of the backward compatibility issues, we will stick with "taxbase-reduction").
 
 ### Response
 The same as PrintReceipt, except for the "info" section, which is not provided (not needed).
@@ -569,6 +596,8 @@ The response is standard status response.
 ## `POST` Print Deposit Money Receipt
 Deposits the amount
 
+Warning: Be aware, in Tremol devices, you should present credentials - operator and operatorPassword as in receipt request.
+
 ### Example request uri:
 ```
 http://localhost:8001/printers/dt517985/deposit
@@ -585,6 +614,8 @@ The response is standard status response.
 
 ## `POST` Print Withdraw Money Receipt
 Withdraws the amount
+
+Warning: Be aware, in Tremol devices, you should present credentials - operator and operatorPassword as in receipt request.
 
 ### Example request uri:
 ```
@@ -644,7 +675,9 @@ The response is standard status response.
 
 ## `GET` Get Current Cash Amount
 Gets the current cash amount registered in the fiscal printer. 
-The request is `POST` because you are allowed to provide "taskId" in the body of the request.
+You can provide taskId as URL query parameter.
+
+Warning: Be aware, in Tremol devices, you should present credentials - operator and operatorPassword as in receipt request.
 
 ### Example request uri:
 ```
@@ -684,9 +717,9 @@ The first character "P" is the code for the command. Next charaters are the requ
 
 ### Example for FP-2000
 Command
-58H (88) Obtain the Date of the last record in fiscal memory
+56H (86) Obtain the Date of the last record in fiscal memory
 
-0x58 is the ASCII code for "V". 
+0x56 is the ASCII code for "V". 
 
 "T" is the parameter for command, which gives not only Date, but also the Time of the last record in FM.
 
@@ -741,3 +774,15 @@ The answer is here: "rawResponse": "25-06-2019 11:15:26".
     ]
 }
 ```
+
+## `POST` Print Last Receipt's Duplicate
+Prints duplicate of the last fiscal receipt
+
+### Example request uri:
+```
+http://localhost:8001/printers/dt517985/duplicate
+```
+
+### Response
+The response is standard status response.
+

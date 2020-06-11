@@ -1,4 +1,6 @@
-﻿namespace ErpNet.FP.Core
+﻿using System;
+
+namespace ErpNet.FP.Core
 {
     /// <summary>
     /// Represents the capabilities of a connected fiscal printer.
@@ -47,18 +49,18 @@
         (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt);
 
         /// <summary>
-        /// Validates the reversal receipt object
-        /// </summary>
-        /// <param name="reversalReceipt"></param>
-        /// <returns></returns>
-        DeviceStatus ValidateReversalReceipt(ReversalReceipt reversalReceipt);
-
-        /// <summary>
         /// Prints a non-fiscal receipt.
         /// </summary>
         /// <param name="nonFiscalReceipt"></param>
         /// <returns></returns>
         DeviceStatus PrintNonFiscalReceipt(NonFiscalReceipt nonFiscalReceipt);
+
+        /// <summary>
+        /// Validates the reversal receipt object
+        /// </summary>
+        /// <param name="reversalReceipt"></param>
+        /// <returns></returns>
+        DeviceStatus ValidateReversalReceipt(ReversalReceipt reversalReceipt);
 
         /// <summary>
         /// Prints a deposit money note.
@@ -90,6 +92,11 @@
         DeviceStatus PrintXReport(Credentials credentials);
 
         /// <summary>
+        /// Prints duplicate of the last fiscal receipt.
+        /// </summary>
+        DeviceStatus PrintDuplicate(Credentials credentials);
+
+        /// <summary>
         /// Raw request.
         /// </summary>
         DeviceStatusWithRawResponse RawRequest(RequestFrame requestFrame);
@@ -98,5 +105,7 @@
         /// Tries to fix the erroneous state of the device to the normal - ready for printing state
         /// </summary>
         DeviceStatusWithDateTime Reset(Credentials credentials);
+
+        void SetDeadLine(DateTime deadLine);
     }
 }

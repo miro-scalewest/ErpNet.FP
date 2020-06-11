@@ -1,8 +1,9 @@
-﻿namespace ErpNet.FP.Core.Drivers
+namespace ErpNet.FP.Core.Drivers
 {
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using ErpNet.FP.Core.Configuration;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation.
@@ -10,8 +11,11 @@
     /// <seealso cref="ErpNet.FP.BgFiscalPrinter" />
     public abstract partial class BgIslFiscalPrinter : BgFiscalPrinter
     {
-        protected BgIslFiscalPrinter(IChannel channel, IDictionary<string, string>? options = null)
-        : base(channel, options) { }
+        protected BgIslFiscalPrinter(
+            IChannel channel, 
+            ServiceOptions serviceOptions, 
+            IDictionary<string, string>? options = null)
+        : base(channel, serviceOptions, options) { }
 
         public override DeviceStatusWithDateTime CheckStatus()
         {
@@ -113,11 +117,12 @@
                     {
                         (_, deviceStatus) = AddComment(item.Text);
                     }
-                    else
+                    else if (item.Type == ItemType.Sale)
                     {
                         try
                         {
                             (_, deviceStatus) = AddItem(
+                                item.Department,
                                 item.Text,
                                 item.UnitPrice,
                                 item.TaxGroup,
@@ -131,6 +136,14 @@
                             deviceStatus.AddError(e.Code, e.Message);
                             break;
                         }
+                    }
+                    else if (item.Type == ItemType.SurchargeAmount)
+                    {
+                        (_, deviceStatus) = SubtotalChangeAmount(item.Amount);
+                    }
+                    else if (item.Type == ItemType.DiscountAmount)
+                    {                        
+                        (_, deviceStatus) = SubtotalChangeAmount(-item.Amount);
                     }
                     if (!deviceStatus.Ok)
                     {
@@ -182,6 +195,21 @@
                 }
             }
 
+            itemNumber = 0;
+            if (receipt.Items != null) foreach (var item in receipt.Items)
+                {
+                    itemNumber++;
+                    if (item.Type == ItemType.FooterComment)
+                    {
+                        (_, deviceStatus) = AddComment(item.Text);
+                        if (!deviceStatus.Ok)
+                        {
+                            deviceStatus.AddInfo($"Error occurred in Item {itemNumber}");
+                            return (receiptInfo, deviceStatus);
+                        }
+                    }
+                }
+
             // Get the receipt date and time (current fiscal device date and time)
             DateTime? dateTime;
             (dateTime, deviceStatus) = GetDateTime();
@@ -215,17 +243,18 @@
             // Get receipt number
             string lastDocumentNumberResponse;
             (lastDocumentNumberResponse, deviceStatus) = GetLastDocumentNumber(closeReceiptResponse);
-            if (!deviceStatus.Ok)
+            if (!deviceStatus.Ok || String.IsNullOrWhiteSpace(lastDocumentNumberResponse))
             {
                 AbortReceipt();
-                deviceStatus.AddInfo($"Error occurred while reading last document number");
+                deviceStatus.AddInfo($"Error occurred while reading last receipt number");
+                deviceStatus.AddError("E409", $"Last receipt number is empty");
                 return (receiptInfo, deviceStatus);
             }
             receiptInfo.ReceiptNumber = lastDocumentNumberResponse;
 
             return (receiptInfo, deviceStatus);
         }
-        
+
         public override (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt)
         {
             var receiptInfo = new ReceiptInfo();
@@ -263,7 +292,7 @@
         {
             var receiptInfo = new ReceiptInfo();
 
-            // Abort all unfinished or erroneous receipts
+            // Abort all unfinished or erroneus receipts
             AbortReceipt();
 
             // Opening receipt
@@ -303,14 +332,14 @@
                 deviceStatus.AddInfo("Error occurred while opening new non-fiscal receipt");
                 return deviceStatus;
             }
-            
+
             foreach (FreeTextItem item in nonFiscalReceipt.Items)
             {
                 PrintNonFiscalReceiptText(item.Text, item.Bold, item.Italic, item.Underline, item.LineHeight);
             }
-            
+
             (_, deviceStatus) = CloseNonFiscalReceipt();
-            
+
             if (!deviceStatus.Ok)
             {
                 deviceStatus.AddInfo("Error occurred while printing non-fiscal receipt items");
@@ -329,6 +358,12 @@
         public override DeviceStatus PrintXReport(Credentials credentials)
         {
             var (_, status) = PrintDailyReport(false);
+            return status;
+        }
+
+        public override DeviceStatus PrintDuplicate(Credentials credentials)
+        {
+            var (_, status) = Request(CommandPrintLastReceiptDuplicate, "1");
             return status;
         }
 

@@ -190,7 +190,7 @@
                 var computedBcc = ComputeBCC(rawResponse.Slice(preamblePos + 1, postamblePos + 1));
                 if (bcc.SequenceEqual(computedBcc))
                 {
-                    var response = Encoding.UTF8.GetString(data);
+                    var response = PrinterEncoding.GetString(data);
 
                     return (response, ParseStatus(status));
                 }
@@ -213,9 +213,15 @@
         }
 
         protected (string, DeviceStatus) Request(byte command, string? data = null)
-        {
+        {            
             lock (frameSyncLock)
             {
+                if (DeadLine < DateTime.Now)
+                {
+                    var deviceStatus = new DeviceStatus();
+                    deviceStatus.AddError("E999", "User timeout occured while sending the request");
+                    return (string.Empty, deviceStatus);
+                }
                 try
                 {
                     return ParseResponse(RawRequest(command, data == null ? null : PrinterEncoding.GetBytes(data)));

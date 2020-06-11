@@ -1,5 +1,6 @@
 ﻿namespace ErpNet.FP.Server.Controllers
 {
+    using System;
     using System.Collections.Generic;
     using System.Reflection;
     using ErpNet.FP.Core.Configuration;
@@ -7,6 +8,7 @@
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Hosting;
+    using Serilog;
 
     // PrintersController, example: //host/service/[controller]
     [Route("[controller]")]
@@ -34,9 +36,7 @@
         // GET vars
         [HttpGet("vars")]
         public ActionResult<ServerVariables> Vars()
-        {
-            return serverVariables;
-        }
+            => serverVariables;
 
         // GET toggleautodetect
         [HttpGet("toggleautodetect")]
@@ -73,12 +73,23 @@
             }
         }
 
+        // GET printersprops
+        [HttpGet("printersprops")]
+        public ActionResult<Dictionary<string, PrinterProperties>> GetPrinterSpecificProperties()
+            => context.PrintersProperties;
+
+        // POST printersprops
+        [HttpPost("printersprops")]
+        public ActionResult<Dictionary<string, PrinterProperties>> PrinterSpecificProperties(Dictionary<string, PrinterProperties> printersProperties)
+        {
+            context.PrintersProperties = printersProperties;
+            return context.PrintersProperties;
+        }
+
         // GET printers
         [HttpGet("printers")]
         public ActionResult<Dictionary<string, PrinterConfig>> Configured()
-        {
-            return context.ConfiguredPrinters;
-        }
+            => context.ConfiguredPrinters;
 
         // POST printers/configure
         [HttpPost("printers/configure")]
@@ -105,5 +116,14 @@
             }
             return StatusCode(StatusCodes.Status423Locked);
         }
+
+        // POST restart
+        [HttpPost("restart")]
+        public void RestartService()
+        {
+            Log.Information("Restarting service");
+            Environment.Exit(1);
+        }
+
     }
 }

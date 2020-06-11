@@ -2,6 +2,10 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
+    using System.Text;
+    using ErpNet.FP.Core.Configuration;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation of Daisy Bulgaria.
@@ -10,9 +14,51 @@
     public partial class BgDaisyIslFiscalPrinter : BgIslFiscalPrinter
     {
         protected const byte
-            DaisyCommandGetDeviceConstants = 0x80,
-            DaisyCommandAbortFiscalReceipt = 0x82;
+            DaisyCommandGetDeviceConstants          = 0x80,
+            DaisyCommandAbortFiscalReceipt          = 0x82,
+            DaisyCommandFiscalReceiptSaleDepartment = 0x8A;
 
+        public override (string, DeviceStatus) AddItem(
+            int department,
+            string itemText,
+            decimal unitPrice,
+            TaxGroup taxGroup,
+            decimal quantity = 0,
+            decimal priceModifierValue = 0,
+            PriceModifierType priceModifierType = PriceModifierType.None)
+        {
+            if (department <= 0) 
+            {
+                return base.AddItem(department, itemText, unitPrice, taxGroup, quantity, priceModifierValue,
+                  priceModifierType);
+            }
+
+            var itemData = new StringBuilder()
+                .Append(department).Append("@")
+                .Append(unitPrice.ToString("F2", CultureInfo.InvariantCulture));
+
+            if (quantity != 0)
+            {
+                itemData
+                    .Append('*')
+                    .Append(quantity.ToString(CultureInfo.InvariantCulture));
+            }
+            if (priceModifierType != PriceModifierType.None)
+            {
+                itemData
+                    .Append(
+                        priceModifierType == PriceModifierType.DiscountPercent
+                        ||
+                        priceModifierType == PriceModifierType.SurchargePercent
+                        ? ',' : '$')
+                    .Append((
+                        priceModifierType == PriceModifierType.DiscountPercent
+                        ||
+                        priceModifierType == PriceModifierType.DiscountAmount
+                        ? -priceModifierValue : priceModifierValue).ToString("F2", CultureInfo.InvariantCulture));
+            }
+            return Request(DaisyCommandFiscalReceiptSaleDepartment, itemData.ToString());
+        }
 
         public override (string, DeviceStatus) AbortReceipt()
         {
@@ -33,12 +79,14 @@
 
         public override IDictionary<PaymentType, string> GetPaymentTypeMappings()
         {
-            return new Dictionary<PaymentType, string> {
+            var paymentTypeMappings = new Dictionary<PaymentType, string> {
                 { PaymentType.Cash,       "P" },
                 { PaymentType.Card,       "C" },
                 { PaymentType.Check,      "N" },
                 { PaymentType.Reserved1,  "D" }
             };
+            ServiceOptions.RemapPaymentTypes(Info.SerialNumber, paymentTypeMappings);
+            return paymentTypeMappings;
         }
 
         // 6 Bytes x 8 bits

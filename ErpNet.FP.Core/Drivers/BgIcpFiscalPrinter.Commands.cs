@@ -13,7 +13,7 @@
     {
         public override IDictionary<PaymentType, string> GetPaymentTypeMappings()
         {
-            return new Dictionary<PaymentType, string> {
+            var paymentTypeMappings = new Dictionary<PaymentType, string> {
                 { PaymentType.Cash,          "0" },
                 { PaymentType.Check,         "1" },
                 { PaymentType.Coupons,       "2" },
@@ -26,6 +26,8 @@
                 { PaymentType.Reserved1,     "9" },
                 { PaymentType.Reserved2,     "A" }
             };
+            ServiceOptions.RemapPaymentTypes(Info.SerialNumber, paymentTypeMappings);
+            return paymentTypeMappings;
         }
 
         public override string GetTaxGroupText(TaxGroup taxGroup)
@@ -172,6 +174,7 @@
 
         public virtual (string, DeviceStatus) AddItem(
             string uniqueSaleNumber,
+            int department,
             string itemText,
             decimal unitPrice,
             TaxGroup taxGroup,
@@ -186,7 +189,7 @@
                 .Append(IcpDecimal(quantity == 0m ? 1m : quantity, 8, 3))
                 .Append(IcpDecimal(999, 8, 0))
                 .Append(IcpDecimal(unitPrice, 8, 2))
-                .Append("0")
+                .Append(department.ToString("X"))
                 .Append(GetTaxGroupText(taxGroup))
                 .Append("00")
                 .Append(itemText.WithMaxLength(Info.ItemTextMaxLength));

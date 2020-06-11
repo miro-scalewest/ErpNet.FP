@@ -5,6 +5,7 @@ namespace ErpNet.FP.Core.Drivers
     using System.Globalization;
     using System.Text;
     using System.Text.RegularExpressions;
+    using ErpNet.FP.Core.Configuration;
 
     /// <summary>
     /// Fiscal printer base class for Bg printers.
@@ -19,27 +20,25 @@ namespace ErpNet.FP.Core.Drivers
 
         public DeviceInfo Info = new DeviceInfo();
 
-        public IDictionary<PaymentType, string> PaymentTypeMappings;
+        public IDictionary<PaymentType, string> PaymentTypeMappings = new Dictionary<PaymentType, string>();        
 
-        protected BgFiscalPrinter(IChannel channel, IDictionary<string, string>? options = null)
+        protected BgFiscalPrinter(
+            IChannel channel, 
+            ServiceOptions serviceOptions, 
+            IDictionary<string, string>? options = null)
         {
+            ServiceOptions = serviceOptions;
             Options = new Dictionary<string, string>()
                 .MergeWith(GetDefaultOptions())
-                .MergeWith(options);
+                .MergeWith(options);            
             Channel = channel;
-            PaymentTypeMappings = GetPaymentTypeMappings();
         }
 
         protected abstract DeviceStatus ParseStatus(byte[]? status);
 
-        protected virtual string WithPrinterEncoding(string text)
-        {
-            return PrinterEncoding.GetString(
-                Encoding.Convert(Encoding.Default, PrinterEncoding, Encoding.Default.GetBytes(text)));
-        }
-
         protected IChannel Channel { get; }
         protected IDictionary<string, string> Options { get; }
+        public ServiceOptions ServiceOptions { get; }
 
         public abstract DeviceStatusWithCashAmount Cash(Credentials credentials);
 
@@ -77,6 +76,7 @@ namespace ErpNet.FP.Core.Drivers
 
         public ICollection<PaymentType> GetSupportedPaymentTypes()
         {
+            PaymentTypeMappings = GetPaymentTypeMappings();
             return PaymentTypeMappings.Keys;
         }
 
@@ -103,12 +103,13 @@ namespace ErpNet.FP.Core.Drivers
 
         public abstract DeviceStatus PrintZReport(Credentials credentials);
 
+        public abstract DeviceStatus PrintDuplicate(Credentials credentials);
+
         public abstract DeviceStatusWithRawResponse RawRequest(RequestFrame requestFrame);
 
         public abstract DeviceStatusWithDateTime Reset(Credentials credentials);
 
         public abstract DeviceStatus SetDateTime(CurrentDateTime currentDateTime);
-
 
         public virtual DeviceStatus ValidateReceipt(Receipt receipt)
         {
@@ -134,57 +135,101 @@ namespace ErpNet.FP.Core.Drivers
             foreach (var item in receipt.Items)
             {
                 row++;
-                if (String.IsNullOrEmpty(item.Text))
-                {
-                    status.AddError("E407", $"Item {row}: \"text\" is empty");
-                }
 
-                // Validation of "type" : "sale"
-                if (item.Type == ItemType.Sale)
+                switch (item.Type)
                 {
-                    if (item.PriceModifierValue <= 0 && item.PriceModifierType != PriceModifierType.None)
-                    {
-                        status.AddError("E403", $"Item {row}: \"priceModifierValue\" should be positive number");
-                    }
-                    if (item.PriceModifierValue != 0 && item.PriceModifierType == PriceModifierType.None)
-                    {
-                        status.AddError("E403", $"Item {row}: \"priceModifierValue\" should'nt be \"none\" or empty. You can avoid setting priceModifier if you do not want price modification");
-                    }
-                    if (item.Quantity < 0)
-                    {
-                        status.AddError("E403", $"Item {row}: \"quantity\" should be positive number");
-                    }
-                    if (item.TaxGroup == TaxGroup.Unspecified)
-                    {
-                        status.AddError("E403", $"Item {row}: \"taxGroup\" should'nt be \"unspecified\" or empty");
-                    }
-                    try
-                    {
-                        GetTaxGroupText(item.TaxGroup);
-                    }
-                    catch (StandardizedStatusMessageException e)
-                    {
-                        status.AddError(e.Code, e.Message);
-                    }
-                    var quantity = Math.Round(item.Quantity == 0m ? 1m : item.Quantity, 3, MidpointRounding.AwayFromZero);
-                    var unitPrice = Math.Round(item.UnitPrice, 2, MidpointRounding.AwayFromZero);
-                    var itemPrice = quantity * unitPrice;
-                    switch (item.PriceModifierType)
-                    {
-                        case PriceModifierType.DiscountAmount:
-                            itemPrice -= item.PriceModifierValue;
-                            break;
-                        case PriceModifierType.DiscountPercent:
-                            itemPrice -= itemPrice * (item.PriceModifierValue / 100.0m);
-                            break;
-                        case PriceModifierType.SurchargeAmount:
-                            itemPrice += item.PriceModifierValue;
-                            break;
-                        case PriceModifierType.SurchargePercent:
-                            itemPrice += itemPrice * (item.PriceModifierValue / 100.0m);
-                            break;
-                    }
-                    itemsTotalAmount += Math.Round(itemPrice, 2, MidpointRounding.AwayFromZero);
+                    case ItemType.Sale:
+                        if (String.IsNullOrEmpty(item.Text))
+                        {
+                            status.AddError("E407", $"Item {row}: \"text\" is empty");
+                        }
+                        if (item.PriceModifierValue <= 0 && item.PriceModifierType != PriceModifierType.None)
+                        {
+                            status.AddError("E403", $"Item {row}: \"priceModifierValue\" should be positive number");
+                        }
+                        if (item.PriceModifierValue != 0 && item.PriceModifierType == PriceModifierType.None)
+                        {
+                            status.AddError("E403", $"Item {row}: \"priceModifierValue\" should'nt be \"none\" or empty. You can avoid setting priceModifier if you do not want price modification");
+                        }
+                        if (item.Quantity < 0)
+                        {
+                            status.AddError("E403", $"Item {row}: \"quantity\" should be positive number");
+                        }
+                        if (item.Department < 0)
+                        {
+                            status.AddError("E403", $"Item {row}; \"department\" should be positive number or zero.");
+                        }
+                        if (item.TaxGroup == TaxGroup.Unspecified)
+                        {
+                            status.AddError("E403", $"Item {row}: \"taxGroup\" shouldn't be \"unspecified\" or empty");
+                        }
+                        try
+                        {
+                            GetTaxGroupText(item.TaxGroup);
+                        }
+                        catch (StandardizedStatusMessageException e)
+                        {
+                            status.AddError(e.Code, e.Message);
+                        }
+                        var quantity = Math.Round(item.Quantity == 0m ? 1m : item.Quantity, 3, MidpointRounding.AwayFromZero);
+                        var unitPrice = Math.Round(item.UnitPrice, 2, MidpointRounding.AwayFromZero);
+                        var itemPrice = Math.Round(quantity * unitPrice, 2, MidpointRounding.AwayFromZero);
+                        var itemPriceModifierValue = Math.Round(item.PriceModifierValue, 2, MidpointRounding.AwayFromZero);
+                        switch (item.PriceModifierType)
+                        {
+                            case PriceModifierType.DiscountAmount:
+                                itemPrice -= itemPriceModifierValue;
+                                break;
+                            case PriceModifierType.DiscountPercent:
+                                itemPrice -= Math.Round(itemPrice * (itemPriceModifierValue / 100.0m), 2, MidpointRounding.AwayFromZero);
+                                break;
+                            case PriceModifierType.SurchargeAmount:
+                                itemPrice += itemPriceModifierValue;
+                                break;
+                            case PriceModifierType.SurchargePercent:
+                                itemPrice += Math.Round(itemPrice * (itemPriceModifierValue / 100.0m), 2, MidpointRounding.AwayFromZero);
+                                break;
+                        }
+                        itemsTotalAmount += Math.Round(itemPrice, 2, MidpointRounding.AwayFromZero);
+                        break;
+
+
+                    case ItemType.Comment:
+                        if (String.IsNullOrEmpty(item.Text))
+                        {
+                            status.AddError("E407", $"Item {row}: \"text\" is empty");
+                        }
+                        break;
+
+
+                    case ItemType.FooterComment:
+                        if (String.IsNullOrEmpty(item.Text))
+                        {
+                            status.AddError("E407", $"Item {row}: \"text\" is empty");
+                        }
+                        break;
+
+
+                    case ItemType.SurchargeAmount:
+                        if (item.Amount <= 0)
+                        {
+                            status.AddError("E403", $"Item {row}: \"amount\" should be positive number");
+                        }
+                        itemsTotalAmount += Math.Round(item.Amount, 2, MidpointRounding.AwayFromZero);
+                        break;
+
+
+                    case ItemType.DiscountAmount:
+                        if (item.Amount <= 0)
+                        {
+                            status.AddError("E403", $"Item {row}: \"amount\" should be positive number");
+                        }
+                        itemsTotalAmount -= Math.Round(item.Amount, 2, MidpointRounding.AwayFromZero);
+                        break;
+
+
+                    default:
+                        break;
                 }
 
                 if (!status.Ok)
@@ -200,9 +245,9 @@ namespace ErpNet.FP.Core.Drivers
                 {
                     row++;
 
-                    if (payment.Amount <= 0 && payment.PaymentType != PaymentType.Change)
+                    if (payment.Amount < 0 && payment.PaymentType != PaymentType.Change)
                     {
-                        status.AddError("E403", $"Payment {row}: \"amount\" should be positive number");
+                        status.AddError("E403", $"Payment {row}: \"amount\" should be positive number or zero");
                     }
                     if (payment.Amount >= 0 && payment.PaymentType == PaymentType.Change)
                     {
@@ -247,6 +292,11 @@ namespace ErpNet.FP.Core.Drivers
             {
                 return status;
             }
+            if (reversalReceipt.Payments?.Count > 0)
+            {
+                status.AddWarning("W302", "Reversal receipt payments array should be empty. It will be ignored.");
+                reversalReceipt.Payments.Clear();
+            }
             if (String.IsNullOrEmpty(reversalReceipt.ReceiptNumber))
             {
                 status.AddError("E405", $"ReceiptNumber of the original receipt is empty");
@@ -260,8 +310,6 @@ namespace ErpNet.FP.Core.Drivers
             return status;
         }
 
-
-
         public virtual DeviceStatus ValidateTransferAmount(TransferAmount transferAmount)
         {
             var status = new DeviceStatus();
@@ -273,5 +321,8 @@ namespace ErpNet.FP.Core.Drivers
         }
 
         public DeviceInfo DeviceInfo => Info;
+
+        public void SetDeadLine(DateTime deadLine) => DeadLine = deadLine;
+        public DateTime DeadLine { get; private set; } = DateTime.MaxValue;
     }
 }

@@ -17,13 +17,16 @@
             CommandFullPaymentAndCloseReceipt = 0x36,
             CommandAbortReceipt = 0x39,
             CommandSellCorrection = 0x31,
+            CommandSellCorrectionDepartment = 0x34,
             CommandFreeText = 0x37,
             CommandPayment = 0x35,
             CommandGetDateTime = 0x68,
             CommandSetDateTime = 0x48,
+            CommandSubtotal = 0x33,
             CommandReadLastReceiptQRCodeData = 0x72,
             CommandGetTaxIdentificationNumber = 0x61,
             CommandReadDailyAvailableAmounts = 0x6E,
+            CommandPrintLastReceiptDuplicate = 0x3A,
             CommandGSCommand = 0x1d;
         protected const byte
             // Protocol: 36 symbols for article's name. 34 symbols are printed on paper.
@@ -46,6 +49,12 @@
                 return (commaFields[0].Trim(), deviceStatus);
             }
             return (string.Empty, deviceStatus);
+        }
+
+        public virtual (string, DeviceStatus) SubtotalChangeAmount(Decimal amount)
+        {
+            // <OptionPrinting[1]> <;> <OptionDisplay[1]> {<':'> <DiscAddV[1..8]>} {<','>< DiscAddP[1..7] >}
+            return Request(CommandSubtotal, $"1;0:{amount.ToString("F2", CultureInfo.InvariantCulture)}");
         }
 
         public virtual (string, DeviceStatus) GetLastReceiptQRCodeData()
@@ -175,6 +184,7 @@
         }
 
         public virtual (string, DeviceStatus) AddItem(
+            int department,
             string itemText,
             decimal unitPrice,
             TaxGroup taxGroup,
@@ -182,14 +192,30 @@
             decimal priceModifierValue = 0,
             PriceModifierType priceModifierType = PriceModifierType.None)
         {
-            // Protocol: <NamePLU[36]><;><OptionVATClass[1]><;><Price[1..10]>{<'*'>< Quantity[1..10]>}
-            //           {<','><DiscAddP[1..7]>}{<':'><DiscAddV[1..8]>}
-            var itemData = new StringBuilder()
-                .Append(itemText.WithMaxLength(Info.ItemTextMaxLength).PadRight(ItemTextMandatoryLength))
-                .Append(';')
-                .Append(GetTaxGroupText(taxGroup))
-                .Append(';')
-                .Append(unitPrice.ToString("F2", CultureInfo.InvariantCulture));
+            var itemData = new StringBuilder();
+            if (department <= 0) 
+            {
+                // Protocol: <NamePLU[36]><;><OptionVATClass[1]><;><Price[1..10]>{<'*'>< Quantity[1..10]>}
+                //           {<','><DiscAddP[1..7]>}{<':'><DiscAddV[1..8]>}
+                itemData
+                    .Append(itemText.WithMaxLength(Info.ItemTextMaxLength).PadRight(ItemTextMandatoryLength))
+                    .Append(';')
+                    .Append(GetTaxGroupText(taxGroup))
+                    .Append(';')
+                    .Append(unitPrice.ToString("F2", CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                // Protocol: <NamePLU[36]><;><DepNum[1..2]><;><Price[1..10]>{<'*'>< Quantity[1..10]>}
+                //           {<','><DiscAddP[1..7]>}{<':'><DiscAddV[1..8]>}
+                itemData
+                    .Append(itemText.WithMaxLength(Info.ItemTextMaxLength).PadRight(ItemTextMandatoryLength))
+                    .Append(';')
+                    .Append((department + 0x80).ToString("X2"))
+                    .Append(';')
+                    .Append(unitPrice.ToString("F2", CultureInfo.InvariantCulture));
+            }
+
             if (quantity != 0)
             {
                 itemData
@@ -221,7 +247,15 @@
                 default:
                     break;
             }
-            return Request(CommandSellCorrection, itemData.ToString());
+
+            if (department <= 0) 
+            {
+                return Request(CommandSellCorrection, itemData.ToString());
+            }
+            else
+            {
+                return Request(CommandSellCorrectionDepartment, itemData.ToString());
+            }
         }
 
         public virtual (string, DeviceStatus) AddComment(string text)
