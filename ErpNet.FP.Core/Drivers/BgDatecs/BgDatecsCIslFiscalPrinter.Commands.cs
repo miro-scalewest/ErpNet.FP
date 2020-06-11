@@ -12,6 +12,8 @@
     public partial class BgDatecsCIslFiscalPrinter : BgIslFiscalPrinter
     {
         protected const byte
+            CommandPrintShortReportForDate = 0x4f,
+            CommandPrintDetailedReportForDate = 0x5e,
             CommandDatecsOpenReversalReceipt = 0x2e;
 
         public override (string, DeviceStatus) OpenReceipt(
@@ -266,6 +268,16 @@
             );
 
             return Request(CommandNonFiscalReceiptText, headerData.ToString());
+        }
+
+        public override (string, DeviceStatus) PrintReportForDate(DateTime startDate, DateTime endDate, ReportType type)
+        {
+            var month = startDate.ToString("MMyy", CultureInfo.InvariantCulture);
+            Console.WriteLine("Send " + month);
+
+            return type == ReportType.Short
+                ? Request(CommandPrintShortReportForDate, month)
+                : Request(CommandPrintDetailedReportForDate, month);
         }
 
         protected override DeviceStatus ParseStatus(byte[]? status)

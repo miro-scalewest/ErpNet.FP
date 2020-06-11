@@ -103,6 +103,15 @@ namespace ErpNet.FP.Core.Drivers
 
         public abstract DeviceStatus PrintZReport(Credentials credentials);
 
+        public virtual DeviceStatus PrintMonthlyReport(MonthlyReport monthlyReport)
+        {
+            var status = new DeviceStatus();
+
+            status.AddError("", "This device doesn't support printing monthly reports yet");
+
+            return status;
+        }
+
         public abstract DeviceStatus PrintDuplicate(Credentials credentials);
 
         public abstract DeviceStatusWithRawResponse RawRequest(RequestFrame requestFrame);

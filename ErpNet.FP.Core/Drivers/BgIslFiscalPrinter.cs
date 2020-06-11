@@ -361,6 +361,23 @@ namespace ErpNet.FP.Core.Drivers
             return status;
         }
 
+        public override DeviceStatus PrintMonthlyReport(MonthlyReport monthlyReport)
+        {
+            var (_, deviceStatus) = PrintReportForDate(
+                monthlyReport.StartDate,
+                monthlyReport.EndDate,
+                monthlyReport.Type
+            );
+
+            if (!deviceStatus.Ok)
+            {
+                deviceStatus.AddInfo($"Error occured while printing monthly report");
+                return deviceStatus;
+            }
+
+            return deviceStatus;
+        }
+
         public override DeviceStatus PrintDuplicate(Credentials credentials)
         {
             var (_, status) = Request(CommandPrintLastReceiptDuplicate, "1");

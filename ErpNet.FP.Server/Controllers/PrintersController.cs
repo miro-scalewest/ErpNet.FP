@@ -1,5 +1,6 @@
 namespace ErpNet.FP.Server.Controllers
 {
+    using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using ErpNet.FP.Core;
@@ -214,6 +215,36 @@ namespace ErpNet.FP.Server.Controllers
                 return Ok(result);
             }
             
+            return NotFound();
+        }
+
+        // POST {id}/monthlyreport
+        [HttpPost("{id}/monthlyreport")]
+        public async Task<IActionResult> PrintMonthlyReport(
+            string id,
+            [FromBody] MonthlyReport report,
+            [FromQuery] string? taskId,
+            [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
+        {
+            if (!context.IsReady)
+            {
+                return StatusCode(StatusCodes.Status405MethodNotAllowed);
+            }
+
+            if (context.Printers.TryGetValue(id, out IFiscalPrinter? printer))
+            {
+                var result = await context.RunAsync(
+                    new PrintJob
+                    {
+                        Printer = printer,
+                        Action = PrintJobAction.MonthlyReport,
+                        Document = report,
+                        AsyncTimeout = asyncTimeout,
+                        TaskId = taskId
+                    });
+                return Ok(result);
+            }
+
             return NotFound();
         }
 

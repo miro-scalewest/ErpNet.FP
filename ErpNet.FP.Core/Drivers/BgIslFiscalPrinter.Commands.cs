@@ -27,6 +27,7 @@ namespace ErpNet.FP.Core.Drivers
             CommandGetTaxIdentificationNumber = 0x63,
             CommandPrintLastReceiptDuplicate = 0x6D,
             CommandSubtotal = 0x33,
+            CommandPrintReportForDate = 0x5e,
             CommandReadLastReceiptQRCodeData = 0x74;
 
         public override string GetReversalReasonText(ReversalReason reversalReason)
@@ -344,6 +345,21 @@ namespace ErpNet.FP.Core.Drivers
             {
                 return Request(CommandPrintDailyReport, "2");
             }
+        }
+
+        public virtual (string, DeviceStatus) PrintReportForDate(DateTime startDate, DateTime endDate, ReportType type)
+        {
+            var startDateString = startDate.ToString("dd-MM-yy", CultureInfo.InvariantCulture);
+            var endDateString = endDate.ToString("dd-MM-yy", CultureInfo.InvariantCulture);
+            var headerData = string.Join("\t",
+                type,
+                startDateString,
+                endDateString,
+                null // Must end with a separator
+            );
+
+            Console.WriteLine("Send " + headerData.ToString());
+            return Request(CommandPrintReportForDate, headerData.ToString());
         }
 
         public virtual (string, DeviceStatus) GetLastReceiptQRCodeData()

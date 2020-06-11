@@ -92,6 +92,13 @@ namespace ErpNet.FP.Core
         DeviceStatus PrintXReport(Credentials credentials);
 
         /// <summary>
+        /// Prints monthly report.
+        /// </summary>
+        /// <param name="monthlyReport"></param>
+        /// <returns></returns>
+        DeviceStatus PrintMonthlyReport(MonthlyReport monthlyReport);
+
+        /// <summary>
         /// Prints duplicate of the last fiscal receipt.
         /// </summary>
         DeviceStatus PrintDuplicate(Credentials credentials);
