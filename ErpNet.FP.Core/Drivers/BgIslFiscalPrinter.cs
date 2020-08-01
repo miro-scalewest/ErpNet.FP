@@ -333,9 +333,12 @@ namespace ErpNet.FP.Core.Drivers
                 return deviceStatus;
             }
 
-            foreach (FreeTextItem item in nonFiscalReceipt.Items)
+            if (nonFiscalReceipt.Items != null)
             {
-                PrintNonFiscalReceiptText(item.Text, item.Bold, item.Italic, item.Underline, item.LineHeight);
+                foreach (FreeTextItem item in nonFiscalReceipt.Items)
+                {
+                    PrintNonFiscalReceiptText(item.Text, item.Bold, item.Italic, item.Underline, item.LineHeight);
+                }
             }
 
             (_, deviceStatus) = CloseNonFiscalReceipt();

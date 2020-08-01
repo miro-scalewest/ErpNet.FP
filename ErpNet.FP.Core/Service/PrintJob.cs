@@ -186,6 +186,7 @@ namespace ErpNet.FP.Core.Service
             {
                 Finished = DateTime.Now;
                 TaskStatus = TaskStatus.Finished;
+                Printer.SetDeadLine(DateTime.MaxValue);
             }
         }
 
