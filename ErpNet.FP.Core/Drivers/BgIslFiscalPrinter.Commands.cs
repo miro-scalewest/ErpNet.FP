@@ -349,17 +349,9 @@ namespace ErpNet.FP.Core.Drivers
 
         public virtual (string, DeviceStatus) PrintReportForDate(DateTime startDate, DateTime endDate, ReportType type)
         {
-            var startDateString = startDate.ToString("dd-MM-yy", CultureInfo.InvariantCulture);
-            var endDateString = endDate.ToString("dd-MM-yy", CultureInfo.InvariantCulture);
-            var headerData = string.Join("\t",
-                type,
-                startDateString,
-                endDateString,
-                null // Must end with a separator
-            );
-
-            Console.WriteLine("Send " + headerData.ToString());
-            return Request(CommandPrintReportForDate, headerData.ToString());
+            var deviceStatus = new DeviceStatus();
+            deviceStatus.AddError("0", "Monthly report not supported");
+            return (String.Empty, deviceStatus);
         }
 
         public virtual (string, DeviceStatus) GetLastReceiptQRCodeData()

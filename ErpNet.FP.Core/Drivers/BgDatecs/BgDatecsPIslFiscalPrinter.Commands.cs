@@ -13,6 +13,8 @@
     {
 
         protected const byte
+            CommandPrintShortReportForDate = 0x4f,
+            CommandPrintDetailedReportForDate = 0x5e,
             CommandDatecsOpenReversalReceipt = 0x2e;
         public override (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
@@ -254,7 +256,6 @@
             (null, string.Empty, StatusMessageType.Reserved)
         };
 
-        /**
         public override (string, DeviceStatus) PrintNonFiscalReceiptText(
             string text,
             bool bold = false,
@@ -263,15 +264,35 @@
             LineHeight height = LineHeight.OneLine
         )
         {
+            string flags = "";
+            if (bold)
+            {
+                flags += "B";
+            }
+
+            if (italic)
+            {
+                flags += "I";
+            }
+
             // Protocol: [<Tab><Font>[<Flags>],]<Text>
             var headerData = string.Join("\t",
                 height == LineHeight.OneLine ? 1 : 2,
+                flags,
                 text.WithMaxLength(Info.CommentTextMaxLength)
             );
 
             return Request(CommandNonFiscalReceiptText, headerData.ToString());
         }
-        */
+
+        public override (string, DeviceStatus) PrintReportForDate(DateTime startDate, DateTime endDate, ReportType type)
+        {
+            var month = startDate.ToString("MMyy", CultureInfo.InvariantCulture);
+
+            return type == ReportType.Short
+                ? Request(CommandPrintShortReportForDate, month)
+                : Request(CommandPrintDetailedReportForDate, month);
+        }
 
         protected override DeviceStatus ParseStatus(byte[]? status)
         {

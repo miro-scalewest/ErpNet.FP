@@ -273,7 +273,6 @@
         public override (string, DeviceStatus) PrintReportForDate(DateTime startDate, DateTime endDate, ReportType type)
         {
             var month = startDate.ToString("MMyy", CultureInfo.InvariantCulture);
-            Console.WriteLine("Send " + month);
 
             return type == ReportType.Short
                 ? Request(CommandPrintShortReportForDate, month)

@@ -344,6 +344,20 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             return Request(CommandNonFiscalReceiptText, headerData.ToString());
         }
 
+        public override (string, DeviceStatus) PrintReportForDate(DateTime startDate, DateTime endDate, ReportType type)
+        {
+            var startDateString = startDate.ToString("dd-MM-yy", CultureInfo.InvariantCulture);
+            var endDateString = endDate.ToString("dd-MM-yy", CultureInfo.InvariantCulture);
+            var headerData = string.Join("\t",
+                type,
+                startDateString,
+                endDateString,
+                null // Must end with a separator
+            );
+
+            return Request(CommandPrintReportForDate, headerData.ToString());
+        }
+
         public override (string, DeviceStatus) PrintDailyReport(bool zeroing = true)
         {
             if (zeroing)
