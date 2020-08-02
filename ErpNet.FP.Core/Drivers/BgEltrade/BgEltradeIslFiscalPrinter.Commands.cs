@@ -86,6 +86,27 @@
             return Request(EltradeCommandOpenFiscalReceipt, header);
         }
 
+        public override (string, DeviceStatus) PrintNonFiscalReceiptText(
+            string text,
+            bool bold = false,
+            bool italic = false,
+            bool underline = false,
+            LineHeight height = LineHeight.OneLine
+        )
+        {
+            // Eltrade doesn't support text styling
+            return Request(CommandNonFiscalReceiptText, text.WithMaxLength(Info.CommentTextMaxLength));
+        }
+
+        public override (string, DeviceStatus) PrintReportForDate(DateTime startDate, DateTime endDate, ReportType type)
+        {
+            var startDateString = startDate.ToString("ddMM", CultureInfo.InvariantCulture);
+            // var endDateString = endDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
+            // var headerData = string.Join("", startDateString, endDateString);
+
+            return Request(CommandPrintReportForDate, startDateString);
+        }
+
         // 6 Bytes x 8 bits
         protected static readonly (string?, string, StatusMessageType)[] StatusBitsStrings = new (string?, string, StatusMessageType)[] {
             ("E401", "Incoming data has syntax error", StatusMessageType.Error),
