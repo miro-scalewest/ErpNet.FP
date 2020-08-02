@@ -16,6 +16,8 @@
         protected const byte
             DaisyCommandGetDeviceConstants          = 0x80,
             DaisyCommandAbortFiscalReceipt          = 0x82,
+            CommandPrintShortReportForDate          = 0x4f,
+            CommandPrintDetailedReportForDate       = 0x5e,
             DaisyCommandFiscalReceiptSaleDepartment = 0x8A;
 
         public override (string, DeviceStatus) AddItem(
@@ -70,6 +72,19 @@
             return Request(DaisyCommandGetDeviceConstants);
         }
 
+        public override (string, DeviceStatus) PrintReportForDate(DateTime startDate, DateTime endDate, ReportType type)
+        {
+            var startDateString = startDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
+            var endDateString = endDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
+            var headerData = string.Join("", startDateString, endDateString);
+
+            return Request(
+                type == ReportType.Short
+                    ? CommandPrintShortReportForDate
+                    : CommandPrintDetailedReportForDate,
+                headerData
+            );
+        }
 
         public override (string, DeviceStatus) GetTaxIdentificationNumber()
         {
