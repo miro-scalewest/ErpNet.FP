@@ -349,11 +349,12 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             var startDateString = startDate.ToString("dd-MM-yy", CultureInfo.InvariantCulture);
             var endDateString = endDate.ToString("dd-MM-yy", CultureInfo.InvariantCulture);
             var headerData = string.Join("\t",
-                type,
+                (int) type,
                 startDateString,
                 endDateString,
                 null // Must end with a separator
             );
+            Console.WriteLine("Datecs X: " + headerData);
 
             return Request(CommandPrintReportForDate, headerData.ToString());
         }

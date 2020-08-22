@@ -218,11 +218,11 @@ namespace ErpNet.FP.Server.Controllers
             return NotFound();
         }
 
-        // POST {id}/monthlyreport
-        [HttpPost("{id}/monthlyreport")]
-        public async Task<IActionResult> PrintMonthlyReport(
+        // POST {id}/fiscalreport
+        [HttpPost("{id}/fiscalreport")]
+        public async Task<IActionResult> PrintFiscalReport(
             string id,
-            [FromBody] MonthlyReport report,
+            [FromBody] FiscalReport report,
             [FromQuery] string? taskId,
             [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
         {
@@ -237,7 +237,7 @@ namespace ErpNet.FP.Server.Controllers
                     new PrintJob
                     {
                         Printer = printer,
-                        Action = PrintJobAction.MonthlyReport,
+                        Action = PrintJobAction.FiscalReport,
                         Document = report,
                         AsyncTimeout = asyncTimeout,
                         TaskId = taskId

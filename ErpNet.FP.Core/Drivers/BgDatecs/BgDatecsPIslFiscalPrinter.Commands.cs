@@ -13,8 +13,8 @@
     {
 
         protected const byte
-            CommandPrintShortReportForDate = 0x4f,
-            CommandPrintDetailedReportForDate = 0x5e,
+            CommandPrintBriefReportForDate = 0x4F,
+            CommandPrintDetailedReportForDate = 0x5E,
             CommandDatecsOpenReversalReceipt = 0x2e;
         public override (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
@@ -287,11 +287,17 @@
 
         public override (string, DeviceStatus) PrintReportForDate(DateTime startDate, DateTime endDate, ReportType type)
         {
-            var month = startDate.ToString("MMyy", CultureInfo.InvariantCulture);
+            var startDateString = startDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
+            var endDateString = endDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
+            var headerData = string.Join(",", startDateString, endDateString);
+            Console.WriteLine("Datecs P: " + headerData);
 
-            return type == ReportType.Short
-                ? Request(CommandPrintShortReportForDate, month)
-                : Request(CommandPrintDetailedReportForDate, month);
+            return Request(
+                type == ReportType.Brief
+                    ? CommandPrintBriefReportForDate
+                    : CommandPrintDetailedReportForDate,
+                headerData
+            );
         }
 
         protected override DeviceStatus ParseStatus(byte[]? status)

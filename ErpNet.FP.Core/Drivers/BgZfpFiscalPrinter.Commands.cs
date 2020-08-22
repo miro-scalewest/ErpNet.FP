@@ -23,10 +23,12 @@
             CommandGetDateTime = 0x68,
             CommandSetDateTime = 0x48,
             CommandSubtotal = 0x33,
-            CommandReadLastReceiptQRCodeData = 0x72,
-            CommandGetTaxIdentificationNumber = 0x61,
-            CommandReadDailyAvailableAmounts = 0x6E,
-            CommandPrintLastReceiptDuplicate = 0x3A,
+            CommandReadLastReceiptQRCodeData  = 0x72,
+            CommandGetTaxIdentificationNumber  = 0x61,
+            CommandReadDailyAvailableAmounts  = 0x6E,
+            CommandPrintLastReceiptDuplicate  = 0x3A,
+            CommandPrintBriefReportForDate    = 0x7b,
+            CommandPrintDetailedReportForDate = 0x7a,
             CommandGSCommand = 0x1d;
         protected const byte
             // Protocol: 36 symbols for article's name. 34 symbols are printed on paper.
@@ -300,6 +302,21 @@
             {
                 return Request(CommandPrintDailyFiscalReport, "X");
             }
+        }
+
+        public virtual (string, DeviceStatus) PrintReportForDate(DateTime startDate, DateTime endDate, ReportType type)
+        {
+            var startDateString = startDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
+            var endDateString = endDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
+            var headerData = string.Join(";", startDateString, endDateString);
+            Console.WriteLine("Tremol: " + headerData);
+
+            return Request(
+                type == ReportType.Brief
+                    ? CommandPrintBriefReportForDate
+                    : CommandPrintDetailedReportForDate,
+                headerData
+            );
         }
 
         public virtual (string, DeviceStatus) GetRawDeviceInfo()

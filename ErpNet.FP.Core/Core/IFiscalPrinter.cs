@@ -94,9 +94,9 @@ namespace ErpNet.FP.Core
         /// <summary>
         /// Prints monthly report.
         /// </summary>
-        /// <param name="monthlyReport"></param>
+        /// <param name="fiscalReport"></param>
         /// <returns></returns>
-        DeviceStatus PrintMonthlyReport(MonthlyReport monthlyReport);
+        DeviceStatus PrintFiscalReport(FiscalReport fiscalReport);
 
         /// <summary>
         /// Prints duplicate of the last fiscal receipt.

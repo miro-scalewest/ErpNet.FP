@@ -103,7 +103,7 @@ namespace ErpNet.FP.Core.Drivers
 
         public abstract DeviceStatus PrintZReport(Credentials credentials);
 
-        public virtual DeviceStatus PrintMonthlyReport(MonthlyReport monthlyReport)
+        public virtual DeviceStatus PrintFiscalReport(FiscalReport fiscalReport)
         {
             var status = new DeviceStatus();
 

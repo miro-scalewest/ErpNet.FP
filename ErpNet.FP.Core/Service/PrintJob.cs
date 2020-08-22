@@ -14,7 +14,7 @@ namespace ErpNet.FP.Core.Service
         Deposit,
         XReport,
         ZReport,
-        MonthlyReport,
+        FiscalReport,
         SetDateTime,
         Duplicate,
         Reset
@@ -118,11 +118,11 @@ namespace ErpNet.FP.Core.Service
                             Result = Printer.PrintNonFiscalReceipt(nonFiscalReceipt);
                         }
                         break;
-                    case PrintJobAction.MonthlyReport:
+                    case PrintJobAction.FiscalReport:
                         if (Document != null)
                         {
-                            var reportData = (MonthlyReport) Document;
-                            Result = Printer.PrintMonthlyReport(reportData);
+                            var reportData = (FiscalReport) Document;
+                            Result = Printer.PrintFiscalReport(reportData);
                         }
                         break;
                     case PrintJobAction.Withdraw:

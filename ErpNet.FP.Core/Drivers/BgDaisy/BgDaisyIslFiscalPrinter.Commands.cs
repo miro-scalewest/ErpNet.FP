@@ -16,8 +16,8 @@
         protected const byte
             DaisyCommandGetDeviceConstants          = 0x80,
             DaisyCommandAbortFiscalReceipt          = 0x82,
-            CommandPrintShortReportForDate          = 0x4f,
-            CommandPrintDetailedReportForDate       = 0x5e,
+            CommandPrintBriefReportForDate          = 0x4F,
+            CommandPrintDetailedReportForDate       = 0x5E,
             DaisyCommandFiscalReceiptSaleDepartment = 0x8A;
 
         public override (string, DeviceStatus) AddItem(
@@ -76,11 +76,12 @@
         {
             var startDateString = startDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
             var endDateString = endDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
-            var headerData = string.Join("", startDateString, endDateString);
+            var headerData = string.Join(",", startDateString, endDateString);
+            Console.WriteLine("Daisy: " + headerData);
 
             return Request(
-                type == ReportType.Short
-                    ? CommandPrintShortReportForDate
+                type == ReportType.Brief
+                    ? CommandPrintBriefReportForDate
                     : CommandPrintDetailedReportForDate,
                 headerData
             );

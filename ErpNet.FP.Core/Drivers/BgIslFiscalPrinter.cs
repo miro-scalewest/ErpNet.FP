@@ -364,12 +364,12 @@ namespace ErpNet.FP.Core.Drivers
             return status;
         }
 
-        public override DeviceStatus PrintMonthlyReport(MonthlyReport monthlyReport)
+        public override DeviceStatus PrintFiscalReport(FiscalReport fiscalReport)
         {
             var (_, deviceStatus) = PrintReportForDate(
-                monthlyReport.StartDate,
-                monthlyReport.EndDate,
-                monthlyReport.Type
+                fiscalReport.StartDate,
+                fiscalReport.EndDate,
+                fiscalReport.Type
             );
 
             if (!deviceStatus.Ok)

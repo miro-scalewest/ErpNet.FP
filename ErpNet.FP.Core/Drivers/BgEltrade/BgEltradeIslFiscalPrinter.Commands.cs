@@ -11,6 +11,8 @@
     public partial class BgEltradeIslFiscalPrinter : BgIslFiscalPrinter
     {
         protected const byte
+            CommandPrintBriefReportForDate = 0x4F,
+            CommandPrintDetailedReportForDate = 0x5E,
             EltradeCommandOpenFiscalReceipt = 0x90;
 
 
@@ -100,11 +102,17 @@
 
         public override (string, DeviceStatus) PrintReportForDate(DateTime startDate, DateTime endDate, ReportType type)
         {
-            var startDateString = startDate.ToString("ddMM", CultureInfo.InvariantCulture);
-            // var endDateString = endDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
-            // var headerData = string.Join("", startDateString, endDateString);
+            var startDateString = startDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
+            var endDateString = endDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
+            var headerData = string.Join(",", startDateString, endDateString);
+            Console.WriteLine("Eltrade: " + headerData);
 
-            return Request(CommandPrintReportForDate, startDateString);
+            return Request(
+                type == ReportType.Brief
+                    ? CommandPrintBriefReportForDate
+                    : CommandPrintDetailedReportForDate,
+                headerData
+            );
         }
 
         // 6 Bytes x 8 bits

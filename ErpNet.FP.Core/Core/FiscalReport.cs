@@ -5,14 +5,14 @@ namespace ErpNet.FP.Core
 
     public enum ReportType
     {
-        Short = 0,
+        Brief = 0,
         Detailed = 1,
     }
 
     /// <summary>
     /// Represents one System Receipt, which can be printed on a fiscal printer.
     /// </summary>
-    public class MonthlyReport
+    public class FiscalReport
     {
         /// <summary>
         /// Start date of the report
@@ -27,6 +27,6 @@ namespace ErpNet.FP.Core
         /// <summary>
         /// Type of the report
         /// </summary>
-        public ReportType Type { get; set; } = ReportType.Short;
+        public ReportType Type { get; set; } = ReportType.Brief;
     }
 }

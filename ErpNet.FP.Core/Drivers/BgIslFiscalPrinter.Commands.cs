@@ -27,7 +27,7 @@ namespace ErpNet.FP.Core.Drivers
             CommandGetTaxIdentificationNumber = 0x63,
             CommandPrintLastReceiptDuplicate = 0x6D,
             CommandSubtotal = 0x33,
-            CommandPrintReportForDate = 0x5e,
+            CommandPrintReportForDate = 0x5E,
             CommandReadLastReceiptQRCodeData = 0x74;
 
         public override string GetReversalReasonText(ReversalReason reversalReason)
@@ -350,7 +350,7 @@ namespace ErpNet.FP.Core.Drivers
         public virtual (string, DeviceStatus) PrintReportForDate(DateTime startDate, DateTime endDate, ReportType type)
         {
             var deviceStatus = new DeviceStatus();
-            deviceStatus.AddError("0", "Monthly report not supported");
+            deviceStatus.AddError("0", "Monthly report not supported for this device");
             return (String.Empty, deviceStatus);
         }
 
