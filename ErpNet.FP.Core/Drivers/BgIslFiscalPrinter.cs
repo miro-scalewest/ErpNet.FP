@@ -3,7 +3,9 @@ namespace ErpNet.FP.Core.Drivers
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Threading;
     using ErpNet.FP.Core.Configuration;
+    using Serilog;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation.
