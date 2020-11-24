@@ -376,5 +376,22 @@
             FullPaymentAndCloseReceipt();
             return CheckStatus();
         }
+
+        public override DeviceStatus PrintFiscalReport(FiscalReport fiscalReport)
+        {
+            var (_, deviceStatus) = PrintReportForDate(
+                fiscalReport.StartDate,
+                fiscalReport.EndDate,
+                fiscalReport.Type
+            );
+
+            if (!deviceStatus.Ok)
+            {
+                deviceStatus.AddInfo($"Error occured while printing monthly report");
+                return deviceStatus;
+            }
+
+            return deviceStatus;
+        }
     }
 }
