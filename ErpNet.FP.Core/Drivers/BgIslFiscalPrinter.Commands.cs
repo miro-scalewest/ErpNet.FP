@@ -3,6 +3,7 @@ namespace ErpNet.FP.Core.Drivers
     using System;
     using System.Globalization;
     using System.Text;
+    using Serilog;
 
     public abstract partial class BgIslFiscalPrinter : BgFiscalPrinter
     {
@@ -16,6 +17,7 @@ namespace ErpNet.FP.Core.Drivers
             CommandOpenNonFiscalReceipt = 0x26,
             CommandNonFiscalReceiptText = 0x2a,
             CommandCloseNonFiscalReceipt = 0x27,
+            CommandSetClientInfo = 0x39,
             CommandFiscalReceiptTotal = 0x35,
             CommandFiscalReceiptComment = 0x36,
             CommandFiscalReceiptSale = 0x31,
@@ -177,7 +179,8 @@ namespace ErpNet.FP.Core.Drivers
         public virtual (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            bool isInvoice = false)
         {
             var header = string.Join(",",
                 new string[] {
@@ -189,8 +192,15 @@ namespace ErpNet.FP.Core.Drivers
                         Options.ValueOrDefault("Operator.Password", "0000").WithMaxLength(Info.OperatorPasswordMaxLength)
                         :
                         operatorPassword,
-                    uniqueSaleNumber
+                    uniqueSaleNumber,
+                    "1"
                 });
+
+            if (isInvoice)
+            {
+                header += ",I";
+            }
+
             return Request(CommandOpenFiscalReceipt, header);
         }
 
@@ -308,6 +318,21 @@ namespace ErpNet.FP.Core.Drivers
             return Request(
                 CommandFiscalReceiptComment,
                 text.WithMaxLength(Info.CommentTextMaxLength)
+            );
+        }
+
+        public virtual (string, DeviceStatus) SetInvoice(Invoice invoice)
+        {
+            var clientData = (new StringBuilder())
+                .Append(invoice.UID)
+                .Append('\t')
+                .Append((int) invoice.Type)
+            ;
+            Log.Information("invoice.Type: " + (int) invoice.Type);
+
+            return Request(
+                CommandSetClientInfo,
+                clientData.ToString()
             );
         }
 

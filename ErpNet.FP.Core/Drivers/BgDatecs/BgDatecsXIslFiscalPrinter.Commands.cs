@@ -3,11 +3,13 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Text;
+    using Serilog;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation of Datecs Bulgaria.
     /// </summary>
-    /// <seealso cref="ErpNet.FP.Drivers.BgIslFiscalPrinter" />
+    /// <seealso cref="BgIslFiscalPrinter" />
     public partial class BgDatecsXIslFiscalPrinter : BgIslFiscalPrinter
     {
         protected const byte
@@ -237,6 +239,26 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             );
         }
 
+        public override (string, DeviceStatus) SetInvoice(Invoice invoice)
+        {
+            var clientData = string.Join("\t",
+                invoice.SellerName,
+                invoice.ReceiverName,
+                invoice.BuyerName,
+                invoice.ClientAddress,
+                "",
+                ((int)invoice.Type).ToString(),
+                invoice.UID,
+                invoice.VatNumber,
+                ""
+            );
+
+            return Request(
+                CommandSetClientInfo,
+                clientData
+            );
+        }
+
         public override (string, DeviceStatus) FullPayment()
         {
             return Request(CommandFiscalReceiptTotal, "\t\t\t");
@@ -268,7 +290,8 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
         public override (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            bool isInvoice = false)
         {
             var header = string.Join("\t",
                 new string[] {
@@ -282,7 +305,7 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                         operatorPassword,
                     uniqueSaleNumber,
                     "1",
-                    "",
+                    isInvoice ? "I" : "",
                     ""
                 });
             return Request(CommandOpenFiscalReceipt, header);

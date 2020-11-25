@@ -19,7 +19,8 @@
         public override (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            bool isInvoice = false)
         {
             var header = string.Join(",",
                 new string[] {

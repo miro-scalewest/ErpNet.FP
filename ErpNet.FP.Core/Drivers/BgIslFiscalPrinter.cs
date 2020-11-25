@@ -197,20 +197,25 @@ namespace ErpNet.FP.Core.Drivers
                 }
             }
 
+            if (receipt.Invoice != null)
+            {
+                (_, deviceStatus) = SetInvoice(receipt.Invoice);
+            }
+
             itemNumber = 0;
             if (receipt.Items != null) foreach (var item in receipt.Items)
+            {
+                itemNumber++;
+                if (item.Type == ItemType.FooterComment)
                 {
-                    itemNumber++;
-                    if (item.Type == ItemType.FooterComment)
+                    (_, deviceStatus) = AddComment(item.Text);
+                    if (!deviceStatus.Ok)
                     {
-                        (_, deviceStatus) = AddComment(item.Text);
-                        if (!deviceStatus.Ok)
-                        {
-                            deviceStatus.AddInfo($"Error occurred in Item {itemNumber}");
-                            return (receiptInfo, deviceStatus);
-                        }
+                        deviceStatus.AddInfo($"Error occurred in Item {itemNumber}");
+                        return (receiptInfo, deviceStatus);
                     }
                 }
+            }
 
             // Get the receipt date and time (current fiscal device date and time)
             DateTime? dateTime;
@@ -301,7 +306,8 @@ namespace ErpNet.FP.Core.Drivers
             var (_, deviceStatus) = OpenReceipt(
                 receipt.UniqueSaleNumber,
                 receipt.Operator,
-                receipt.OperatorPassword
+                receipt.OperatorPassword,
+                receipt.Invoice != null ? true : false
             );
             if (!deviceStatus.Ok)
             {

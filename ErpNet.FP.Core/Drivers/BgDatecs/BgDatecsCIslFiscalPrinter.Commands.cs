@@ -4,11 +4,12 @@
     using System.Collections.Generic;
     using System.Globalization;
     using System.Text;
+    using Serilog;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation of Datecs Bulgaria.
     /// </summary>
-    /// <seealso cref="ErpNet.FP.Drivers.BgIslFiscalPrinter" />
+    /// <seealso cref="BgIslFiscalPrinter" />
     public partial class BgDatecsCIslFiscalPrinter : BgIslFiscalPrinter
     {
         protected const byte
@@ -19,7 +20,8 @@
         public override (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            bool isInvoice = false)
         {
             var header = string.Join(",",
                 new string[] {
@@ -34,6 +36,12 @@
                     uniqueSaleNumber,
                     "1"
                 });
+
+            if (isInvoice)
+            {
+                header += ",I";
+            }
+
             return Request(CommandOpenFiscalReceipt, header);
         }
 
@@ -282,6 +290,24 @@
                     ? CommandPrintBriefReportForDate
                     : CommandPrintDetailedReportForDate,
                 headerData
+            );
+        }
+
+        public override (string, DeviceStatus) SetInvoice(Invoice invoice)
+        {
+            var clientData = string.Join("\t",
+                invoice.UID,
+                ((int)invoice.Type).ToString(),
+                invoice.SellerName,
+                invoice.ReceiverName,
+                invoice.BuyerName,
+                invoice.VatNumber,
+                invoice.ClientAddress
+            );
+
+            return Request(
+                CommandSetClientInfo,
+                clientData
             );
         }
 
