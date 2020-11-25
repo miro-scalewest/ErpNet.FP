@@ -154,6 +154,18 @@ namespace ErpNet.FP.Core.Drivers
                     }
                 }
 
+            if (receipt.Invoice != null)
+            {
+                int? invoiceNumber;
+                (invoiceNumber, deviceStatus) = GetCurrentInvoiceNumber();
+                if (!invoiceNumber.HasValue || !deviceStatus.Ok)
+                {
+                    return (receiptInfo, deviceStatus);
+                }
+
+                receiptInfo.InvoiceNumber = invoiceNumber;
+            }
+
             // Receipt payments
             if (receipt.Payments == null || receipt.Payments.Count == 0)
             {

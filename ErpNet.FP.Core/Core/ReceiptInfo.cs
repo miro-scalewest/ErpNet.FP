@@ -18,6 +18,10 @@
         /// </summary>
         public decimal ReceiptAmount = 0m;
         /// <summary>
+        /// Invoice number of the receipt
+        /// </summary>
+        public int? InvoiceNumber = 0;
+        /// <summary>
         /// The fiscal memory number.
         /// </summary>
         public string FiscalMemorySerialNumber = string.Empty;

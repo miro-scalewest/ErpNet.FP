@@ -140,6 +140,10 @@
         /// The fiscal memory number.
         /// </summary>
         public string FiscalMemorySerialNumber = string.Empty;
+        /// <summary>
+        /// Invoice number of the receipt
+        /// </summary>
+        public int? InvoiceNumber = 0;
 
         public DeviceStatusWithReceiptInfo(DeviceStatus status, ReceiptInfo info) : base()
         {
@@ -148,6 +152,7 @@
             ReceiptNumber = info.ReceiptNumber;
             ReceiptDateTime = info.ReceiptDateTime;
             ReceiptAmount = info.ReceiptAmount;
+            InvoiceNumber = info.InvoiceNumber;
             FiscalMemorySerialNumber = info.FiscalMemorySerialNumber;
         }
     }

@@ -96,6 +96,36 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             return (string.Empty, deviceStatus);
         }
 
+        public override (int?, DeviceStatus) GetCurrentInvoiceNumber()
+        {
+            var (receiptInfoResponse, deviceStatus) = Request(CommandGetReceiptInfo);
+            if (!deviceStatus.Ok)
+            {
+                deviceStatus.AddInfo("Error occurred while reading current receipt info");
+                return (null, deviceStatus);
+            }
+
+            var fields = receiptInfoResponse.Split('\t');
+            if (fields.Length < 12)
+            {
+                deviceStatus.AddInfo($"Error occured while parsing current receipt info");
+                deviceStatus.AddError("E409", "Wrong format of receipt status");
+                return (null, deviceStatus);
+            }
+
+            try
+            {
+                return (int.Parse(fields[10]) - 1, deviceStatus);
+            }
+            catch (Exception e)
+            {
+                deviceStatus = new DeviceStatus();
+                deviceStatus.AddInfo($"Error occured while parsing the current invoice number");
+                deviceStatus.AddError("E409", e.Message);
+                return (null, deviceStatus);
+            }
+        }
+
         public override (decimal?, DeviceStatus) GetReceiptAmount()
         {
             decimal? receiptAmount = null;

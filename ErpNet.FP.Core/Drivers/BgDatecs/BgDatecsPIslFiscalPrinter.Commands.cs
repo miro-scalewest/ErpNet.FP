@@ -35,6 +35,12 @@
                     "1",
                     uniqueSaleNumber
                 });
+
+            if (isInvoice)
+            {
+                header += ",I";
+            }
+
             return Request(CommandOpenFiscalReceipt, header);
         }
 

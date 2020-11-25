@@ -62,6 +62,41 @@
             return Request(DaisyCommandFiscalReceiptSaleDepartment, itemData.ToString());
         }
 
+        public override (string, DeviceStatus) SetInvoice(Invoice invoice)
+        {
+            var clientData = (new StringBuilder()).Append(invoice.UID);
+
+            if (invoice.VatNumber.Length > 0)
+            {
+                clientData.Append('\t').Append(invoice.VatNumber);
+
+                if (invoice.SellerName.Length > 0)
+                {
+                    clientData.Append('\t').Append(invoice.SellerName);
+
+                    if (invoice.ReceiverName.Length > 0)
+                    {
+                        clientData.Append('\t').Append(invoice.ReceiverName);
+
+                        if (invoice.BuyerName.Length > 0)
+                        {
+                            clientData.Append('\t').Append(invoice.BuyerName);
+
+                            if (invoice.ClientAddress.Length > 0)
+                            {
+                                clientData.Append('\t').Append(invoice.ClientAddress);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return Request(
+                CommandSetClientInfo,
+                clientData.ToString()
+            );
+        }
+
         public override (string, DeviceStatus) AbortReceipt()
         {
             return Request(DaisyCommandAbortFiscalReceipt);

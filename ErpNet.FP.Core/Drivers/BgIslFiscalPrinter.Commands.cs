@@ -25,6 +25,7 @@ namespace ErpNet.FP.Core.Drivers
             CommandGetDateTime = 0x3e,
             CommandSetDateTime = 0x3d,
             CommandGetReceiptStatus = 0x4c,
+            CommandGetReceiptInfo = 0x67,
             CommandGetLastDocumentNumber = 0x71,
             CommandGetTaxIdentificationNumber = 0x63,
             CommandPrintLastReceiptDuplicate = 0x6D,
@@ -60,6 +61,36 @@ namespace ErpNet.FP.Core.Drivers
         public virtual (string, DeviceStatus) SubtotalChangeAmount(Decimal amount)
         {
             return Request(CommandSubtotal, $"10;{amount.ToString("F2", CultureInfo.InvariantCulture)}");
+        }
+
+        public virtual (int?, DeviceStatus) GetCurrentInvoiceNumber()
+        {
+            var (receiptInfoResponse, deviceStatus) = Request(CommandGetReceiptInfo);
+            if (!deviceStatus.Ok)
+            {
+                deviceStatus.AddInfo("Error occurred while reading current receipt info");
+                return (null, deviceStatus);
+            }
+
+            var fields = receiptInfoResponse.Split(',');
+            if (fields.Length < 12)
+            {
+                deviceStatus.AddInfo($"Error occured while parsing current receipt info");
+                deviceStatus.AddError("E409", "Wrong format of receipt status");
+                return (null, deviceStatus);
+            }
+
+            try
+            {
+                return (int.Parse(fields[10]) - 1, deviceStatus);
+            }
+            catch (Exception e)
+            {
+                deviceStatus = new DeviceStatus();
+                deviceStatus.AddInfo($"Error occured while parsing the current invoice number");
+                deviceStatus.AddError("E409", e.Message);
+                return (null, deviceStatus);
+            }
         }
 
         public virtual (decimal?, DeviceStatus) GetReceiptAmount()
@@ -328,7 +359,6 @@ namespace ErpNet.FP.Core.Drivers
                 .Append('\t')
                 .Append((int) invoice.Type)
             ;
-            Log.Information("invoice.Type: " + (int) invoice.Type);
 
             return Request(
                 CommandSetClientInfo,
