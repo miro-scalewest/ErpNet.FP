@@ -3,11 +3,12 @@
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Text;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation of Eltrade Bulgaria.
     /// </summary>
-    /// <seealso cref="ErpNet.FP.Drivers.BgIslFiscalPrinter" />
+    /// <seealso cref="BgIslFiscalPrinter" />
     public partial class BgEltradeIslFiscalPrinter : BgIslFiscalPrinter
     {
         protected const byte
@@ -49,7 +50,48 @@
                         operatorId,
                     uniqueSaleNumber
                 });
+
+            if (isInvoice)
+            {
+                header += ",I";
+            }
+
             return Request(EltradeCommandOpenFiscalReceipt, header);
+        }
+
+        public override (string, DeviceStatus) SetInvoice(Invoice invoice)
+        {
+            var clientData = (new StringBuilder()).Append(invoice.UID);
+
+            if (!String.IsNullOrEmpty(invoice.SellerName))
+            {
+                clientData.Append('\t').Append(invoice.SellerName);
+
+                if (!String.IsNullOrEmpty(invoice.ReceiverName))
+                {
+                    clientData.Append('\t').Append(invoice.ReceiverName);
+
+                    if (!String.IsNullOrEmpty(invoice.BuyerName))
+                    {
+                        clientData.Append('\t').Append(invoice.BuyerName);
+
+                        if (!String.IsNullOrEmpty(invoice.VatNumber))
+                        {
+                            clientData.Append('\t').Append(invoice.VatNumber);
+
+                            if (!String.IsNullOrEmpty(invoice.ClientAddress))
+                            {
+                                clientData.Append('\t').Append(invoice.ClientAddress);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return Request(
+                CommandSetClientInfo,
+                clientData.ToString()
+            );
         }
 
         public override string GetReversalReasonText(ReversalReason reversalReason)
@@ -69,7 +111,8 @@
             string fiscalMemorySerialNumber,
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword, string invoiceNumber)
+            string operatorPassword,
+            string invoiceNumber)
         {
             // Protocol: <OperName>,<UNP>[,Type[ ,<FMIN>,<Reason>,<num>[,<time>[,<inv>]]]]
             var header = string.Join(",",
@@ -85,6 +128,12 @@
                     receiptNumber,
                     receiptDateTime.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)
                 });
+
+            if (!String.IsNullOrEmpty(invoiceNumber))
+            {
+                header += "," + invoiceNumber;
+            }
+
             return Request(EltradeCommandOpenFiscalReceipt, header);
         }
 
