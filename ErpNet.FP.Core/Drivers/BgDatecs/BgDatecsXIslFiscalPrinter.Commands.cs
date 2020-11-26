@@ -341,14 +341,14 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             return Request(CommandOpenFiscalReceipt, header);
         }
 
-        public override (string, DeviceStatus) OpenReversalReceipt(
-            ReversalReason reason,
+        public override (string, DeviceStatus) OpenReversalReceipt(ReversalReason reason,
             string receiptNumber,
-            System.DateTime receiptDateTime,
+            DateTime receiptDateTime,
             string fiscalMemorySerialNumber,
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            string invoiceNumber)
         {
             // Protocol: {OpCode}<SEP>{OpPwd}<SEP>{TillNmb}<SEP>{Storno}<SEP>{DocNum}<SEP>{DateTime}<SEP>
             //           {FM Number}<SEP>{Invoice}<SEP>{ToInvoice}<SEP>{Reason}<SEP>{NSale}<SEP>
@@ -366,8 +366,8 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                 receiptNumber,
                 receiptDateTime.ToString("dd-MM-yy HH:mm:ss", CultureInfo.InvariantCulture),
                 fiscalMemorySerialNumber,
-                "",
-                "",
+                String.IsNullOrEmpty(invoiceNumber) ? "" : "I",
+                invoiceNumber,
                 "",
                 uniqueSaleNumber,
                 "");

@@ -289,7 +289,8 @@ namespace ErpNet.FP.Core.Drivers
                 reversalReceipt.FiscalMemorySerialNumber,
                 reversalReceipt.UniqueSaleNumber,
                 reversalReceipt.Operator,
-                reversalReceipt.OperatorPassword);
+                reversalReceipt.OperatorPassword,
+                reversalReceipt.InvoiceNumber);
             if (!deviceStatus.Ok)
             {
                 AbortReceipt();

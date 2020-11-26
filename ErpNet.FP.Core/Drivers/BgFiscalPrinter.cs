@@ -316,6 +316,12 @@ namespace ErpNet.FP.Core.Drivers
                 status.AddError("E405", $"FiscalMemorySerialNumber of the original receipt is empty");
                 return status;
             }
+            if (!String.IsNullOrEmpty(reversalReceipt.InvoiceNumber) && null == reversalReceipt.Invoice)
+            {
+                status.AddError("E405", $"Invoice details are required if invoice number is provided");
+                return status;
+            }
+
             return status;
         }
 

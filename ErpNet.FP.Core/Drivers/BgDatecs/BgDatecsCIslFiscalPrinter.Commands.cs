@@ -118,14 +118,14 @@
 
 
 
-        public override (string, DeviceStatus) OpenReversalReceipt(
-            ReversalReason reason,
+        public override (string, DeviceStatus) OpenReversalReceipt(ReversalReason reason,
             string receiptNumber,
-            System.DateTime receiptDateTime,
+            DateTime receiptDateTime,
             string fiscalMemorySerialNumber,
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            string invoiceNumber)
         {
             // Protocol: <OpCode>,<OpPwd>,<NSale>,<TillNmb>,<DocType>,<DocNumber>,<DocDateTime>,< FMNumber >[,< Invoice >,< InvNumber >,< Reason >]
             var header = string.Join(",",
@@ -145,6 +145,18 @@
                     receiptDateTime.ToString("ddMMyyHHmmss", CultureInfo.InvariantCulture),
                     fiscalMemorySerialNumber
                 });
+
+            try
+            {
+                if (invoiceNumber.Length > 0 && int.Parse(invoiceNumber) > 0)
+                {
+                    header += ",I," + invoiceNumber + "," + reason; // TODO: better handle reason?
+                }
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
 
             return Request(CommandDatecsOpenReversalReceipt, header);
         }

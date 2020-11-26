@@ -115,14 +115,14 @@
             };
         }
 
-        public override (string, DeviceStatus) OpenReversalReceipt(
-            ReversalReason reason,
+        public override (string, DeviceStatus) OpenReversalReceipt(ReversalReason reason,
             string receiptNumber,
-            System.DateTime receiptDateTime,
+            DateTime receiptDateTime,
             string fiscalMemorySerialNumber,
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            string invoiceNumber)
         {
             // Protocol:<OpNum>,<Password>,<TillNum>[,<Invoice><InvNum>][,<UNP>],< StType >< DocNo >[,< StUNP >,< StDT >,< StFMIN >][#<StornoReason>]
             var header = string.Join(",",
@@ -135,12 +135,21 @@
                         Options.ValueOrDefault("Operator.Password", "0000").WithMaxLength(Info.OperatorPasswordMaxLength)
                         :
                         operatorPassword,
-                    "1",
-                    GetReversalReasonText(reason)+receiptNumber,
-                    uniqueSaleNumber,
-                    receiptDateTime.ToString("ddMMyyHHmmss", CultureInfo.InvariantCulture),
-                    fiscalMemorySerialNumber
-                });
+                    "1"
+                    }
+                );
+
+            if (!String.IsNullOrEmpty(invoiceNumber))
+            {
+                header += "," + invoiceNumber + ",I";
+            }
+
+            header += "," + string.Join(",",
+                GetReversalReasonText(reason)+receiptNumber,
+                uniqueSaleNumber,
+                receiptDateTime.ToString("ddMMyyHHmmss", CultureInfo.InvariantCulture),
+                fiscalMemorySerialNumber
+            );
 
             return Request(CommandDatecsOpenReversalReceipt, header);
         }

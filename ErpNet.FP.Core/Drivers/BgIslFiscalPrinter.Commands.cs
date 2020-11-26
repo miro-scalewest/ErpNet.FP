@@ -73,7 +73,7 @@ namespace ErpNet.FP.Core.Drivers
             }
 
             var fields = receiptInfoResponse.Split(',');
-            if (fields.Length < 12)
+            if (fields.Length < 11)
             {
                 deviceStatus.AddInfo($"Error occured while parsing current receipt info");
                 deviceStatus.AddError("E409", "Wrong format of receipt status");
@@ -235,16 +235,18 @@ namespace ErpNet.FP.Core.Drivers
             return Request(CommandOpenFiscalReceipt, header);
         }
 
-        public virtual (string, DeviceStatus) OpenReversalReceipt(
-            ReversalReason reason,
+        public virtual (string, DeviceStatus) OpenReversalReceipt(ReversalReason reason,
             string receiptNumber,
-            System.DateTime receiptDateTime,
+            DateTime receiptDateTime,
             string fiscalMemorySerialNumber,
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            string invoiceNumber)
         {
             // Protocol: {ClerkNum},{Password},{UnicSaleNum}[{Tab}{Refund}{Reason},{DocLink},{DocLinkDT}{Tab}{FiskMem}
+            //           |{Credit}|{InvLivk},{Reason},{DocLink},{DocLinkDT}{Tab}{FiskMem}]
+            // TODO: debug?
             var headerData = new StringBuilder()
                 .Append(
                     String.IsNullOrEmpty(operatorId) ?

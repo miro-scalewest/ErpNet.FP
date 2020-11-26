@@ -24,6 +24,7 @@
     public class ReversalReceipt : Receipt
     {
         public string ReceiptNumber { get; set; } = string.Empty;
+        public string InvoiceNumber { get; set; } = string.Empty;
         public System.DateTime ReceiptDateTime { get; set; }
         public string FiscalMemorySerialNumber { get; set; } = string.Empty;
 
