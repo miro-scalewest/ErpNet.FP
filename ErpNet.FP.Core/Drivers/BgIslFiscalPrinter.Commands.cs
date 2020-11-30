@@ -223,8 +223,7 @@ namespace ErpNet.FP.Core.Drivers
                         Options.ValueOrDefault("Operator.Password", "0000").WithMaxLength(Info.OperatorPasswordMaxLength)
                         :
                         operatorPassword,
-                    uniqueSaleNumber,
-                    "1"
+                    uniqueSaleNumber
                 });
 
             if (isInvoice)
