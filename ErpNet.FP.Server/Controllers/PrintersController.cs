@@ -453,5 +453,64 @@ namespace ErpNet.FP.Server.Controllers
             }
             return NotFound();
         }
+
+        // POST {id}/invoiceRange
+        [HttpPost("{id}/invoiceRange")]
+        public async Task<IActionResult> SetInvoiceRange(
+            string id,
+            [FromBody] InvoiceRange invoiceRange,
+            [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
+            [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
+        {
+            if (!context.IsReady)
+            {
+                return StatusCode(StatusCodes.Status405MethodNotAllowed);
+            }
+            if (context.Printers.TryGetValue(id, out IFiscalPrinter? printer))
+            {
+                var result = await context.RunAsync(
+                    new PrintJob
+                    {
+                        Printer = printer,
+                        Action = PrintJobAction.SetInvoiceNumberRange,
+                        Document = invoiceRange,
+                        AsyncTimeout = asyncTimeout,
+                        Timeout = timeout == null ? 0 : timeout.ParseTimeout(),
+                        TaskId = taskId
+                    });
+                return Ok(result);
+            }
+            return NotFound();
+        }
+
+        // GET {id}/invoiceRange
+        [HttpGet("{id}/invoiceRange")]
+        public async Task<IActionResult> GetInvoiceRange(
+            string id,
+            [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
+            [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
+        {
+            if (!context.IsReady)
+            {
+                return StatusCode(StatusCodes.Status405MethodNotAllowed);
+            }
+            if (context.Printers.TryGetValue(id, out IFiscalPrinter? printer))
+            {
+                var result = await context.RunAsync(
+                    new PrintJob
+                    {
+                        Printer = printer,
+                        Action = PrintJobAction.GetInvoiceNumberRange,
+                        Document = null,
+                        AsyncTimeout = asyncTimeout,
+                        Timeout = timeout == null ? 0 : timeout.ParseTimeout(),
+                        TaskId = taskId
+                    });
+                return Ok(result);
+            }
+            return NotFound();
+        }
     }
 }

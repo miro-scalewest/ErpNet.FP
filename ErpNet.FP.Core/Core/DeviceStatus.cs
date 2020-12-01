@@ -122,6 +122,18 @@
         }
     }
 
+    public class DeviceStatusWithInvoiceRange : DeviceStatus
+    {
+        public int? Start { get; set; }
+        public int? End { get; set; }
+
+        public DeviceStatusWithInvoiceRange(DeviceStatus status) : base()
+        {
+            Ok = status.Ok;
+            Messages = status.Messages;
+        }
+    }
+
     public class DeviceStatusWithReceiptInfo : DeviceStatus
     {
         /// <summary>

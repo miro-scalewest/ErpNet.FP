@@ -14,7 +14,9 @@
         protected const byte
             CommandPrintBriefReportForDate = 0x4F,
             CommandPrintDetailedReportForDate = 0x5E,
-            EltradeCommandOpenFiscalReceipt = 0x90;
+            EltradeCommandOpenFiscalReceipt = 0x90,
+            CommandGetInvoiceRange = 0x42,
+            CommandSetInvoiceRange = 0x42;
 
 
         public override IDictionary<PaymentType, string> GetPaymentTypeMappings()
@@ -92,6 +94,50 @@
                 CommandSetClientInfo,
                 clientData.ToString()
             );
+        }
+
+        public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
+        {
+            var (_, result) =  Request(CommandSetInvoiceRange, invoiceRange.Start + "," + invoiceRange.End);
+            if (!result.Ok)
+            {
+                result.AddError("E499", "An error occurred while setting invoice range");
+                return result;
+            }
+
+            var (_, setCreditNoteRange) =  Request(CommandSetInvoiceRange, $"S{invoiceRange.Start},{invoiceRange.End}");
+            if (!setCreditNoteRange.Ok)
+            {
+                result.AddError("E499", "An error occurred while setting credit notes range");
+                return result;
+            }
+
+            return result;
+        }
+
+        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        {
+            var (data, result) =  Request(CommandGetInvoiceRange);
+            var response = new DeviceStatusWithInvoiceRange(result);
+            if (!result.Ok)
+            {
+                response.AddError("E499", "An error occurred while setting invoice range");
+                return response;
+            }
+
+            var split = data.Split(",");
+            try
+            {
+                response.Start = int.Parse(split[0]);
+                response.End = int.Parse(split[1]);
+            }
+            catch (Exception e)
+            {
+                response.AddError("E409", "Error occurred while parsing invoice range data");
+                response.AddInfo(e.Message);
+            }
+
+            return response;
         }
 
         public override string GetReversalReasonText(ReversalReason reversalReason)

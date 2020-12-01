@@ -23,22 +23,26 @@
             CommandGetDateTime = 0x68,
             CommandSetDateTime = 0x48,
             CommandSubtotal = 0x33,
-            CommandReadLastReceiptQRCodeData  = 0x72,
-            CommandGetTaxIdentificationNumber  = 0x61,
-            CommandReadDailyAvailableAmounts  = 0x6E,
-            CommandPrintLastReceiptDuplicate  = 0x3A,
-            CommandPrintBriefReportForDate    = 0x7b,
+            CommandReadLastReceiptQRCodeData = 0x72,
+            CommandGetTaxIdentificationNumber = 0x61,
+            CommandReadDailyAvailableAmounts = 0x6E,
+            CommandPrintLastReceiptDuplicate = 0x3A,
+            CommandPrintBriefReportForDate = 0x7b,
             CommandPrintDetailedReportForDate = 0x7a,
+            CommandGetInvoiceRange = 0x70,
+            CommandSetInvoiceRange = 0x50,
             CommandGSCommand = 0x1d;
+
         protected const byte
             // Protocol: 36 symbols for article's name. 34 symbols are printed on paper.
-            // Attention: ItemText should be padded right with spaces until reaches mandatory 
+            // Attention: ItemText should be padded right with spaces until reaches mandatory
             // length of 36 symbols. Otherwise we will have syntax error!
             ItemTextMandatoryLength = 36;
 
         public virtual (string, DeviceStatus) GetStatus()
         {
-            var (deviceStatus, _ /* ignore commandStatus */) = ParseResponseAsByteArray(RawRequest(CommandGetStatus, null));
+            var (deviceStatus, _ /* ignore commandStatus */) =
+                ParseResponseAsByteArray(RawRequest(CommandGetStatus, null));
             return ("", ParseStatus(deviceStatus));
         }
 
@@ -50,6 +54,7 @@
             {
                 return (commaFields[0].Trim(), deviceStatus);
             }
+
             return (string.Empty, deviceStatus);
         }
 
@@ -113,75 +118,135 @@
         {
             return Request(CommandNoFiscalRAorPOAmount, string.Join(";", new string[]
             {
-                String.IsNullOrEmpty(transferAmount.Operator) ?
-                    Options.ValueOrDefault("Operator.ID", "1")
-                    :
-                    transferAmount.Operator,
-                String.IsNullOrEmpty(transferAmount.OperatorPassword) ?
-                    Options.ValueOrDefault("Operator.Password", "0000")
-                    :
-                    transferAmount.OperatorPassword,
-                "0", // Protocol: Reserved 
+                String.IsNullOrEmpty(transferAmount.Operator)
+                    ? Options.ValueOrDefault("Operator.ID", "1")
+                    : transferAmount.Operator,
+                String.IsNullOrEmpty(transferAmount.OperatorPassword)
+                    ? Options.ValueOrDefault("Operator.Password", "0000")
+                    : transferAmount.OperatorPassword,
+                "0", // Protocol: Reserved
                 transferAmount.Amount.ToString("F2", CultureInfo.InvariantCulture)
             }));
         }
 
-        public virtual (string, DeviceStatus) OpenReceipt(
-            string uniqueSaleNumber,
-            string operatorId,
-            string operatorPassword)
+        public virtual (string, DeviceStatus) OpenReceipt(Receipt receipt)
         {
-            // Protocol: <OperNum[1..2]> <;> <OperPass[6]> <;> <ReceiptFormat[1]> <;> 
+            if (receipt.Invoice != null)
+            {
+                return OpenInvoiceReceipt(receipt);
+            }
+
+            // Protocol: <OperNum[1..2]> <;> <OperPass[6]> <;> <ReceiptFormat[1]> <;>
             //           <PrintVAT[1]> <;> <FiscalRcpPrintType[1]> {<’$’> <UniqueReceiptNumber[24]>}
-            return Request(CommandOpenReceipt, string.Join(";", new string[] {
-                String.IsNullOrEmpty(operatorId) ?
-                    Options.ValueOrDefault("Operator.ID", "1")
-                    :
-                    operatorId,
-                String.IsNullOrEmpty(operatorPassword) ?
-                    Options.ValueOrDefault("Operator.Password", "0000")
-                    :
-                    operatorPassword,
+            return Request(CommandOpenReceipt, string.Join(";", new string[]
+            {
+                String.IsNullOrEmpty(receipt.Operator)
+                    ? Options.ValueOrDefault("Operator.ID", "1")
+                    : receipt.Operator,
+                String.IsNullOrEmpty(receipt.OperatorPassword)
+                    ? Options.ValueOrDefault("Operator.Password", "0000")
+                    : receipt.OperatorPassword,
                 "1", // Protocol: Detailed
                 "1", // Protocol: Include VAT
-                "2$"+uniqueSaleNumber, // Protocol: Buffered printing (4) is faster than (2) postponed printing, 
-                // but there are problems with read timeout because 
-                // the Fiscal Device becomes non-responsable when 
+                "2$" + receipt
+                    .UniqueSaleNumber, // Protocol: Buffered printing (4) is faster than (2) postponed printing,
+                // but there are problems with read timeout because
+                // the Fiscal Device becomes non-responsable when
                 // there are many rows to be printed.
                 // Delimiter '$' before USN.
             }));
         }
 
-        public virtual (string, DeviceStatus) OpenReversalReceipt(
-            ReversalReason reason,
-            string receiptNumber,
-            System.DateTime receiptDateTime,
-            string fiscalMemorySerialNumber,
-            string uniqueSaleNumber,
-            string operatorId,
-            string operatorPassword)
+        public virtual (string, DeviceStatus) OpenInvoiceReceipt(Receipt receipt)
         {
+            // Protocol: <OperNum[1..2]> <;> <OperPass[6]> <;> <reserved['0']> <;> <reserved['0']> <;>
+            // <InvoicePrintType[1]> <;> <Recipient[26]> <;> <Buyer[16]> <;> <VATNumber[13]> <;>
+            // <UIC[13]> <;> <Address[30]> <;> <UICType[1]> { <’$’> <UniqueReceiptNumber[24]>}
+            var payload = string.Join(";", new string[]
+            {
+                String.IsNullOrEmpty(receipt.Operator)
+                    ? Options.ValueOrDefault("Operator.ID", "1")
+                    : receipt.Operator,
+                String.IsNullOrEmpty(receipt.OperatorPassword)
+                    ? Options.ValueOrDefault("Operator.Password", "0000")
+                    : receipt.OperatorPassword,
+                "0", // Reserved 0
+                "0", // Reserved 0
+                "3", // Protocol: Buffered printing (4) is faster than (2) postponed printing,
+                // but there are problems with read timeout because
+                // the Fiscal Device becomes non-responsable when
+                // there are many rows to be printed.
+                receipt.Invoice?.ReceiverName != null ? receipt.Invoice.ReceiverName : "", // Recipient
+                receipt.Invoice?.BuyerName != null ? receipt.Invoice.BuyerName : "", // Buyer
+                receipt.Invoice?.VatNumber != null ? receipt.Invoice.VatNumber : "", // VAT Number
+                receipt.Invoice?.UID != null ? receipt.Invoice.UID : "", // UIC
+                receipt.Invoice?.ClientAddress != null ? receipt.Invoice.ClientAddress : "", // Address
+                ((int) (receipt.Invoice?.Type == null ? 0 : receipt.Invoice.Type)).ToString(), // Type
+                "$" + receipt.UniqueSaleNumber // Delimiter '$' before USN.
+            });
+
+            return Request(CommandOpenReceipt, payload);
+        }
+
+        public virtual (string, DeviceStatus) OpenReversalReceipt(ReversalReceipt receipt)
+        {
+            if (receipt.Invoice != null)
+            {
+                return OpenReversalCreditNoteReceipt(receipt);
+            }
+
             // Protocol: <OperNum[1..2]> <;> <OperPass[6]> <;> <ReceiptFormat[1]> <;>
             //            < PrintVAT[1] > <;> < StornoRcpPrintType[1] > <;> < StornoReason[1] > <;>
             //            < RelatedToRcpNum[1..6] > <;> < RelatedToRcpDateTime ”DD-MM-YY HH:MM[:SS]”> <;>
-            //            < FMNum[8] > {<;> < RelatedToURN[24] >}            
-            return Request(CommandOpenReceipt, string.Join(";", new string[] {
-                String.IsNullOrEmpty(operatorId) ?
-                    Options.ValueOrDefault("Operator.ID", "1")
-                    :
-                    operatorId,
-                String.IsNullOrEmpty(operatorPassword) ?
-                    Options.ValueOrDefault("Operator.Password", "0000")
-                    :
-                    operatorPassword,
+            //            < FMNum[8] > {<;> < RelatedToURN[24] >}
+            return Request(CommandOpenReceipt, string.Join(";", new string[]
+            {
+                String.IsNullOrEmpty(receipt.Operator)
+                    ? Options.ValueOrDefault("Operator.ID", "1")
+                    : receipt.Operator,
+                String.IsNullOrEmpty(receipt.OperatorPassword)
+                    ? Options.ValueOrDefault("Operator.Password", "0000")
+                    : receipt.OperatorPassword,
                 "1", // Protocol: Detailed
                 "1", // Protocol: Include VAT
                 "D", // Protocol: Buffered printing
-                GetReversalReasonText(reason),
-                receiptNumber,
-                receiptDateTime.ToString("dd-MM-yy HH:mm:ss", CultureInfo.InvariantCulture),
-                fiscalMemorySerialNumber,
-                uniqueSaleNumber
+                GetReversalReasonText(receipt.Reason), receipt.ReceiptNumber,
+                receipt.ReceiptDateTime.ToString("dd-MM-yy HH:mm:ss", CultureInfo.InvariantCulture), receipt.FiscalMemorySerialNumber,
+                receipt.UniqueSaleNumber
+            }));
+        }
+
+        public virtual (string, DeviceStatus) OpenReversalCreditNoteReceipt(ReversalReceipt receipt)
+        {
+            // Protocol: <OperNum[1..2]> <;> <OperPass[6]> <;> <reserved['0']> <;> <reserved['0']> <;>
+            //             <InvoiceCreditNotePrintType[1]> <;> <Recipient[26]> <;> <Buyer[16]> <;> <VATNumber[13]> <;>
+            //             <UIC[13]> <;> <Address[30]> <;> <UICType[1]> <;> <StornoReason[1]> <;>
+            //             <RelatedToInvoiceNum[10]> <;> <RelatedToInvoiceDateTime”DD-MM-YY HH:MM:SS”> <;>
+            //             <RelatedToRcpNum[1..6]> <;> <FMNum[8]> { <;> <RelatedToURN[24]> }
+
+            return Request(CommandOpenReceipt, string.Join(";", new[]
+            {
+                String.IsNullOrEmpty(receipt.Operator)
+                    ? Options.ValueOrDefault("Operator.ID", "1")
+                    : receipt.Operator,
+                String.IsNullOrEmpty(receipt.OperatorPassword)
+                    ? Options.ValueOrDefault("Operator.Password", "0000")
+                    : receipt.OperatorPassword,
+                "0", // Protocol: Reserved 0
+                "0", // Protocol: Reserved 0
+                "E", // Protocol: Buffered printing
+                receipt.Invoice?.ReceiverName != null ? receipt.Invoice.ReceiverName : "", // Recipient
+                receipt.Invoice?.BuyerName != null ? receipt.Invoice.BuyerName : "", // Buyer
+                receipt.Invoice?.VatNumber != null ? receipt.Invoice.VatNumber : "", // VAT Number
+                receipt.Invoice?.UID != null ? receipt.Invoice.UID : "", // UIC
+                receipt.Invoice?.ClientAddress != null ? receipt.Invoice.ClientAddress : "", // Address
+                ((int) (receipt.Invoice?.Type == null ? 0 : receipt.Invoice.Type)).ToString(), // Type
+                GetReversalReasonText(receipt.Reason),
+                receipt.InvoiceNumber,
+                receipt.ReceiptDateTime.ToString("dd-MM-yy HH:mm:ss", CultureInfo.InvariantCulture),
+                receipt.ReceiptNumber,
+                receipt.FiscalMemorySerialNumber,
+                receipt.UniqueSaleNumber
             }));
         }
 
@@ -324,6 +389,55 @@
             var (responseFD, _) = Request(CommandReadFDNumbers);
             var (responseV, deviceStatus) = Request(CommandVersion);
             return (responseV + responseFD, deviceStatus);
+        }
+
+        public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
+        {
+            var (_, result) =  Request(CommandSetInvoiceRange, invoiceRange.Start + ";" + invoiceRange.End);
+            return result;
+        }
+
+        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        {
+            var (invoiceRangeResponse, status) = Request(CommandGetInvoiceRange);
+            var deviceStatus = new DeviceStatusWithInvoiceRange(status);
+            if (!deviceStatus.Ok)
+            {
+                deviceStatus.AddInfo("Error occurred while reading invoice range");
+                return deviceStatus;
+            }
+
+            var fields = invoiceRangeResponse.Split(';');
+            if (fields.Length < 2)
+            {
+                deviceStatus.AddInfo($"Error occured while parsing invoice range info");
+                deviceStatus.AddError("E409", "Wrong format of invoice range");
+                return deviceStatus;
+            }
+
+            try
+            {
+                deviceStatus.Start = int.Parse(fields[0]);
+                deviceStatus.End = int.Parse(fields[1]);
+            }
+            catch (Exception e)
+            {
+                deviceStatus.AddInfo($"Error occured while parsing invoice range info");
+                deviceStatus.AddError("E409", e.Message);
+            }
+
+            return deviceStatus;
+        }
+
+        public virtual (int?, DeviceStatus) GetCurrentInvoiceNumber()
+        {
+            var invoiceRangeResult = GetInvoiceRange();
+
+            if (invoiceRangeResult.Start != null) {
+                return (invoiceRangeResult.Start - 1, invoiceRangeResult);
+            }
+
+            return (null, invoiceRangeResult);
         }
     }
 }

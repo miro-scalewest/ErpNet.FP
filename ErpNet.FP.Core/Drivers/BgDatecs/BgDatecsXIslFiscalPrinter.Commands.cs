@@ -3,7 +3,6 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
     using System;
     using System.Collections.Generic;
     using System.Globalization;
-    using System.Text;
     using Serilog;
 
     /// <summary>
@@ -13,7 +12,9 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
     public partial class BgDatecsXIslFiscalPrinter : BgIslFiscalPrinter
     {
         protected const byte
-           DatecsXCommandOpenStornoDocument = 0x2b;
+           DatecsXCommandOpenStornoDocument = 0x2b,
+           CommandGetInvoiceRange = 0x42,
+           CommandSetInvoiceRange = 0x42;
 
         public override IDictionary<PaymentType, string> GetPaymentTypeMappings()
         {
@@ -124,6 +125,43 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                 deviceStatus.AddError("E409", e.Message);
                 return (null, deviceStatus);
             }
+        }
+
+        public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
+        {
+            var (_, result) =  Request(CommandSetInvoiceRange, $"{invoiceRange.Start}\t{invoiceRange.End}\t");
+            if (!result.Ok)
+            {
+                result.AddError("E499", "An error occurred while setting invoice range");
+            }
+
+            return result;
+        }
+
+        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        {
+            var (data, output) = Request(CommandGetInvoiceRange);
+            var result = new DeviceStatusWithInvoiceRange(output);
+
+            if (!output.Ok)
+            {
+                result.AddError("E499", "An error occurred while reading invoice range");
+                return result;
+            }
+
+            try
+            {
+                var split = data.Split("\t");
+                result.Start = int.Parse(split[1]);
+                result.End = int.Parse(split[2]);
+            }
+            catch (Exception e)
+            {
+                result.AddInfo($"Error occured while parsing the invoice range");
+                result.AddError("E409", e.Message);
+            }
+
+            return result;
         }
 
         public override (decimal?, DeviceStatus) GetReceiptAmount()

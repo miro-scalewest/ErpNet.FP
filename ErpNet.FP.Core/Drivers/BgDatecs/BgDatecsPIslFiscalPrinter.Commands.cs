@@ -15,7 +15,9 @@
         protected const byte
             CommandPrintBriefReportForDate = 0x4F,
             CommandPrintDetailedReportForDate = 0x5E,
-            CommandDatecsOpenReversalReceipt = 0x2e;
+            CommandDatecsOpenReversalReceipt = 0x2e,
+            CommandGetInvoiceRange = 0x42,
+            CommandSetInvoiceRange = 0x42;
         public override (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
             string operatorId,
@@ -152,6 +154,43 @@
             );
 
             return Request(CommandDatecsOpenReversalReceipt, header);
+        }
+
+        public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
+        {
+            var (_, result) =  Request(CommandSetInvoiceRange, invoiceRange.Start + "," + invoiceRange.End);
+            if (!result.Ok)
+            {
+                result.AddError("E499", "An error occurred while setting invoice range");
+            }
+
+            return result;
+        }
+
+        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        {
+            var (data, output) = Request(CommandGetInvoiceRange);
+            var result = new DeviceStatusWithInvoiceRange(output);
+
+            if (!output.Ok)
+            {
+                result.AddError("E499", "An error occurred while reading invoice range");
+                return result;
+            }
+
+            try
+            {
+                var split = data.Split(",");
+                result.Start = int.Parse(split[0]);
+                result.End = int.Parse(split[1]);
+            }
+            catch (Exception e)
+            {
+                result.AddInfo($"Error occured while parsing the invoice range");
+                result.AddError("E409", e.Message);
+            }
+
+            return result;
         }
 
         public override IDictionary<PaymentType, string> GetPaymentTypeMappings()

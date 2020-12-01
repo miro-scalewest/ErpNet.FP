@@ -294,6 +294,10 @@ namespace ErpNet.FP.Core.Drivers
             return status;
         }
 
+        public abstract DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange);
+
+        public abstract DeviceStatusWithInvoiceRange GetInvoiceRange();
+
         public virtual DeviceStatus ValidateReversalReceipt(ReversalReceipt reversalReceipt)
         {
             var status = ValidateReceipt(reversalReceipt);
@@ -332,6 +336,18 @@ namespace ErpNet.FP.Core.Drivers
             {
                 status.AddError("E403", "Amount should be positive number");
             }
+            return status;
+        }
+
+        public DeviceStatus ValidateInvoiceRange(InvoiceRange invoiceRange)
+        {
+            var status = new DeviceStatus();
+
+            if (invoiceRange.Start >= invoiceRange.End)
+            {
+                status.AddError("E403", "End number should be bigger than start number");
+            }
+
             return status;
         }
 

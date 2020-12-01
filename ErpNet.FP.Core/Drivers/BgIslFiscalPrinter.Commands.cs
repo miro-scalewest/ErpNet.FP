@@ -31,7 +31,9 @@ namespace ErpNet.FP.Core.Drivers
             CommandPrintLastReceiptDuplicate = 0x6D,
             CommandSubtotal = 0x33,
             CommandPrintReportForDate = 0x5E,
-            CommandReadLastReceiptQRCodeData = 0x74;
+            CommandReadLastReceiptQRCodeData = 0x74,
+            CommandGetInvoiceRange = 0x11,
+            CommandSetInvoiceRange = 0x11;
 
         public override string GetReversalReasonText(ReversalReason reversalReason)
         {
@@ -418,6 +420,44 @@ namespace ErpNet.FP.Core.Drivers
         public virtual (string, DeviceStatus) GetRawDeviceInfo()
         {
             return Request(CommandGetDeviceInfo, "1");
+        }
+
+        public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
+        {
+            var (_, result) =  Request(CommandSetInvoiceRange, invoiceRange.Start + ";" + invoiceRange.End);
+            return result;
+        }
+
+        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        {
+            var (invoiceRangeResponse, status) = Request(CommandGetInvoiceRange);
+            var deviceStatus = new DeviceStatusWithInvoiceRange(status);
+            if (!deviceStatus.Ok)
+            {
+                deviceStatus.AddInfo("Error occurred while reading invoice range");
+                return deviceStatus;
+            }
+
+            var fields = invoiceRangeResponse.Split(';');
+            if (fields.Length < 2)
+            {
+                deviceStatus.AddInfo($"Error occured while parsing invoice range info");
+                deviceStatus.AddError("E409", "Wrong format of invoice range");
+                return deviceStatus;
+            }
+
+            try
+            {
+                deviceStatus.Start = int.Parse(fields[0]);
+                deviceStatus.End = int.Parse(fields[1]);
+            }
+            catch (Exception e)
+            {
+                deviceStatus.AddInfo($"Error occured while parsing invoice range info");
+                deviceStatus.AddError("E409", e.Message);
+            }
+
+            return deviceStatus;
         }
     }
 }

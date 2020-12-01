@@ -147,6 +147,18 @@
                     }
                 }
 
+            if (receipt.Invoice != null)
+            {
+                int? invoiceNumber;
+                (invoiceNumber, deviceStatus) = GetCurrentInvoiceNumber();
+                if (!invoiceNumber.HasValue || !deviceStatus.Ok)
+                {
+                    return (receiptInfo, deviceStatus);
+                }
+
+                receiptInfo.InvoiceNumber = invoiceNumber;
+            }
+
             // Receipt payments
             if (receipt.Payments == null || receipt.Payments.Count == 0)
             {
@@ -221,14 +233,7 @@
             AbortReceipt();
 
             // Receipt header
-            var (_, deviceStatus) = OpenReversalReceipt(
-                reversalReceipt.Reason,
-                reversalReceipt.ReceiptNumber,
-                reversalReceipt.ReceiptDateTime,
-                reversalReceipt.FiscalMemorySerialNumber,
-                reversalReceipt.UniqueSaleNumber,
-                reversalReceipt.Operator,
-                reversalReceipt.OperatorPassword);
+            var (_, deviceStatus) = OpenReversalReceipt(reversalReceipt);
             if (!deviceStatus.Ok)
             {
                 AbortReceipt();
@@ -253,11 +258,7 @@
             AbortReceipt();
 
             // Receipt header
-            var (_, deviceStatus) = OpenReceipt(
-                receipt.UniqueSaleNumber,
-                receipt.Operator,
-                receipt.OperatorPassword
-            );
+            var (_, deviceStatus) = OpenReceipt(receipt);
             if (!deviceStatus.Ok)
             {
                 AbortReceipt();
