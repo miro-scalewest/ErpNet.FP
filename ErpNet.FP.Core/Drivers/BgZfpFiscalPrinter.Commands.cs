@@ -187,8 +187,8 @@
                 vatNumber, // VAT Number
                 uidNumber, // UIC
                 clientAddress, // Address
-                ((int) (receipt.Invoice?.Type == null ? 0 : receipt.Invoice.Type)).ToString(), // Type
-                "$" + receipt.UniqueSaleNumber // Delimiter '$' before USN.
+                ((int) (receipt.Invoice?.Type == null ? 0 : receipt.Invoice.Type)) // Type
+                + "$" + receipt.UniqueSaleNumber // Delimiter '$' before USN.
             });
 
             return Request(CommandOpenReceipt, payload);
