@@ -393,7 +393,9 @@
 
         public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
         {
-            var (_, result) =  Request(CommandSetInvoiceRange, invoiceRange.Start + ";" + invoiceRange.End);
+            var start = invoiceRange.Start.ToString().PadLeft(10, '0');
+            var end = invoiceRange.End.ToString().PadLeft(10, '0');
+            var (_, result) =  Request(CommandSetInvoiceRange, start + ";" + end);
             return result;
         }
 
