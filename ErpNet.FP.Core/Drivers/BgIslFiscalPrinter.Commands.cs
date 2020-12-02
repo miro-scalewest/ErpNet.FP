@@ -230,7 +230,7 @@ namespace ErpNet.FP.Core.Drivers
 
             if (isInvoice)
             {
-                header += ",I";
+                header += "\tI";
             }
 
             return Request(CommandOpenFiscalReceipt, header);
