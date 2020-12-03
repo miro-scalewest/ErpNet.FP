@@ -224,6 +224,12 @@
 
         public virtual (string, DeviceStatus) OpenReversalCreditNoteReceipt(ReversalReceipt receipt)
         {
+            var receiver = receipt.Invoice?.ReceiverName.PadRight(26, ' ');
+            var buyerName = receipt.Invoice?.BuyerName.PadRight(16, ' ');
+            var vatNumber = receipt.Invoice?.VatNumber.PadRight(13, ' ');
+            var uidNumber = receipt.Invoice?.UID.PadRight(13, ' ');
+            var clientAddress = receipt.Invoice?.ClientAddress.PadRight(30, ' ');
+
             // Protocol: <OperNum[1..2]> <;> <OperPass[6]> <;> <reserved['0']> <;> <reserved['0']> <;>
             //             <InvoiceCreditNotePrintType[1]> <;> <Recipient[26]> <;> <Buyer[16]> <;> <VATNumber[13]> <;>
             //             <UIC[13]> <;> <Address[30]> <;> <UICType[1]> <;> <StornoReason[1]> <;>
@@ -241,11 +247,11 @@
                 "0", // Protocol: Reserved 0
                 "0", // Protocol: Reserved 0
                 "E", // Protocol: Buffered printing
-                receipt.Invoice?.ReceiverName != null ? receipt.Invoice.ReceiverName : "", // Recipient
-                receipt.Invoice?.BuyerName != null ? receipt.Invoice.BuyerName : "", // Buyer
-                receipt.Invoice?.VatNumber != null ? receipt.Invoice.VatNumber : "", // VAT Number
-                receipt.Invoice?.UID != null ? receipt.Invoice.UID : "", // UIC
-                receipt.Invoice?.ClientAddress != null ? receipt.Invoice.ClientAddress : "", // Address
+                receiver, // Recipient
+                buyerName, // Buyer
+                vatNumber, // VAT Number
+                uidNumber, // UIC
+                clientAddress, // Address
                 ((int) (receipt.Invoice?.Type == null ? 0 : receipt.Invoice.Type)).ToString(), // Type
                 GetReversalReasonText(receipt.Reason),
                 receipt.InvoiceNumber,
@@ -441,7 +447,7 @@
         {
             var invoiceRangeResult = GetInvoiceRange();
 
-            if (invoiceRangeResult.Start != null) {
+            if (invoiceRangeResult.Ok && invoiceRangeResult.Start != null) {
                 return (invoiceRangeResult.Start - 1, invoiceRangeResult);
             }
 
