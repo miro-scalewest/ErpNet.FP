@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Globalization;
     using System.Text;
+    using Serilog;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation of Eltrade Bulgaria.
@@ -98,7 +99,42 @@
 
         public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
         {
-            var (_, result) =  Request(CommandSetInvoiceRange, invoiceRange.Start + "," + invoiceRange.End);
+            var creditNotesRange = GetRange(true);
+
+            if (creditNotesRange.Ok
+                && (
+                    (!creditNotesRange.Start.HasValue || creditNotesRange.Start == 0)
+                    || (!creditNotesRange.End.HasValue || creditNotesRange.End == 0)
+                    || creditNotesRange.Start >= creditNotesRange.End
+                )
+            )
+            {
+                Log.Information("Setting credit note range");
+                var res = SetRange(invoiceRange, true);
+
+                if (res.Ok)
+                {
+                    Log.Information("Credit note range set");
+                }
+                else
+                {
+                    Log.Error("Couldn't set credit note range");
+                    foreach (StatusMessage message in res.Messages)
+                    {
+                        if (message.Type == StatusMessageType.Error)
+                        {
+                            Log.Error($"[{message.Code}] {message.Text}");
+                        }
+                    }
+                }
+            }
+
+            return SetRange(invoiceRange);
+        }
+
+        public DeviceStatus SetRange(InvoiceRange invoiceRange, bool creditNote = false)
+        {
+            var (_, result) =  Request(CommandSetInvoiceRange, (creditNote ? "S" : "") + invoiceRange.Start + "," + invoiceRange.End);
             if (!result.Ok)
             {
                 result.AddError("E499", "An error occurred while setting invoice range");
@@ -115,9 +151,9 @@
             return result;
         }
 
-        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        public DeviceStatusWithInvoiceRange GetRange(bool creditNote = false)
         {
-            var (data, result) =  Request(CommandGetInvoiceRange);
+            var (data, result) =  Request(CommandGetInvoiceRange, creditNote ? "S" : null);
             var response = new DeviceStatusWithInvoiceRange(result);
             if (!result.Ok)
             {
@@ -138,6 +174,11 @@
             }
 
             return response;
+        }
+
+        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        {
+            return GetRange();
         }
 
         public override string GetReversalReasonText(ReversalReason reversalReason)
