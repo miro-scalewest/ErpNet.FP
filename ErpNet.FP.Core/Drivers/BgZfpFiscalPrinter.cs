@@ -224,7 +224,7 @@
                 }
             }
 
-            return GetLastReceiptInfo();
+            return GetLastReceiptInfo(receiptInfo.InvoiceNumber);
         }
 
         public override (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt)
@@ -277,7 +277,7 @@
             return (receiptInfo, deviceStatus);
         }
 
-        protected virtual (ReceiptInfo, DeviceStatus) GetLastReceiptInfo()
+        protected virtual (ReceiptInfo, DeviceStatus) GetLastReceiptInfo(int? invoiceNumber)
         {
             // QR Code Data Format: <FM Number>*<Receipt Number>*<Receipt Date>*<Receipt Hour>*<Receipt Amount>
             // 50163145*000002*2020-01-28*15:29:00*30.00
@@ -324,7 +324,8 @@
                 FiscalMemorySerialNumber = qrCodeFields[0],
                 ReceiptAmount = receiptAmount,
                 ReceiptNumber = receiptNumber,
-                ReceiptDateTime = receiptDateTime
+                ReceiptDateTime = receiptDateTime,
+                InvoiceNumber = invoiceNumber.HasValue ? invoiceNumber : 0
             }, deviceStatus);
         }
 
