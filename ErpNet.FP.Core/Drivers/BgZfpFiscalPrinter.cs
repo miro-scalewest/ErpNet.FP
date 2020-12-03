@@ -325,7 +325,7 @@
                 ReceiptAmount = receiptAmount,
                 ReceiptNumber = receiptNumber,
                 ReceiptDateTime = receiptDateTime,
-                InvoiceNumber = invoiceNumber.HasValue ? invoiceNumber : 0
+                InvoiceNumber = invoiceNumber ?? 0
             }, deviceStatus);
         }
 
