@@ -192,6 +192,72 @@
             };
         }
 
+        public override (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt)
+        {
+            var receiptInfo = new ReceiptInfo();
+
+            if (reversalReceipt.Invoice != null)
+            {
+                var (isValid, rangeCheckResult) = CreditNoteRangeCheck();
+
+                if (!rangeCheckResult.Ok || !isValid)
+                {
+                    return (receiptInfo, rangeCheckResult);
+                }
+            }
+
+            // Abort all unfinished or erroneus receipts
+            AbortReceipt();
+
+            // Receipt header
+            var (_, deviceStatus) = OpenReversalReceipt(
+                reversalReceipt.Reason,
+                reversalReceipt.ReceiptNumber,
+                reversalReceipt.ReceiptDateTime,
+                reversalReceipt.FiscalMemorySerialNumber,
+                reversalReceipt.UniqueSaleNumber,
+                reversalReceipt.Operator,
+                reversalReceipt.OperatorPassword,
+                reversalReceipt.InvoiceNumber);
+            if (!deviceStatus.Ok)
+            {
+                AbortReceipt();
+                deviceStatus.AddInfo($"Error occured while opening new fiscal reversal receipt");
+                return (receiptInfo, deviceStatus);
+            }
+
+            (receiptInfo, deviceStatus) = PrintReceiptBody(reversalReceipt);
+            if (!deviceStatus.Ok)
+            {
+                AbortReceipt();
+                deviceStatus.AddInfo($"Error occured while printing receipt items");
+            }
+
+            return (receiptInfo, deviceStatus);
+        }
+
+        public (bool, DeviceStatus) CreditNoteRangeCheck()
+        {
+            var range = GetRange(true);
+            if (!range.Ok)
+            {
+                range.AddError("E405", "Error occurred while fetching credit note range");
+                return (false, range);
+            }
+
+            if (!range.Start.HasValue
+                || !range.End.HasValue
+                || range.Start == 0
+                || range.End == 0
+                || range.Start >= range.End)
+            {
+                range.AddError("405", "Credit note range is not set");
+                return (false, range);
+            }
+
+            return (true, range);
+        }
+
         public override (string, DeviceStatus) OpenReversalReceipt(ReversalReason reason,
             string receiptNumber,
             DateTime receiptDateTime,

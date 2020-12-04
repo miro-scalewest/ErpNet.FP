@@ -3,9 +3,7 @@ namespace ErpNet.FP.Core.Drivers
     using System;
     using System.Collections.Generic;
     using System.Globalization;
-    using System.Threading;
-    using ErpNet.FP.Core.Configuration;
-    using Serilog;
+    using Configuration;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation.
@@ -278,6 +276,16 @@ namespace ErpNet.FP.Core.Drivers
         {
             var receiptInfo = new ReceiptInfo();
 
+            if (reversalReceipt.Invoice != null)
+            {
+                var (isValid, rangeCheckResult) = InvoiceRangeCheck();
+
+                if (!rangeCheckResult.Ok || !isValid)
+                {
+                    return (receiptInfo, rangeCheckResult);
+                }
+            }
+
             // Abort all unfinished or erroneus receipts
             AbortReceipt();
 
@@ -312,6 +320,16 @@ namespace ErpNet.FP.Core.Drivers
         {
             var receiptInfo = new ReceiptInfo();
 
+            if (receipt.Invoice != null)
+            {
+                var (isValid, rangeCheckResult) = InvoiceRangeCheck();
+
+                if (!rangeCheckResult.Ok || !isValid)
+                {
+                    return (receiptInfo, rangeCheckResult);
+                }
+            }
+
             // Abort all unfinished or erroneus receipts
             AbortReceipt();
 
@@ -320,7 +338,7 @@ namespace ErpNet.FP.Core.Drivers
                 receipt.UniqueSaleNumber,
                 receipt.Operator,
                 receipt.OperatorPassword,
-                receipt.Invoice != null ? true : false
+                receipt.Invoice != null
             );
             if (!deviceStatus.Ok)
             {
@@ -339,7 +357,7 @@ namespace ErpNet.FP.Core.Drivers
 
             return (receiptInfo, deviceStatus);
         }
-        
+
         public override DeviceStatus PrintNonFiscalReceipt(NonFiscalReceipt nonFiscalReceipt)
         {
             // Abort all unfinished or erroneous receipts

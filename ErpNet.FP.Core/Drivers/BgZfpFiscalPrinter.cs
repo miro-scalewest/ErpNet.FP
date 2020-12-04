@@ -257,6 +257,16 @@
             // Abort all unfinished or erroneus receipts
             AbortReceipt();
 
+            if (receipt.Invoice != null)
+            {
+                var (isValid, rangeCheckResult) = InvoiceRangeCheck();
+
+                if (!rangeCheckResult.Ok || !isValid)
+                {
+                    return (new ReceiptInfo(), rangeCheckResult);
+                }
+            }
+
             // Receipt header
             var (_, deviceStatus) = OpenReceipt(receipt);
             if (!deviceStatus.Ok)

@@ -5,7 +5,7 @@ namespace ErpNet.FP.Core.Drivers
     using System.Globalization;
     using System.Text;
     using System.Text.RegularExpressions;
-    using ErpNet.FP.Core.Configuration;
+    using Configuration;
 
     /// <summary>
     /// Fiscal printer base class for Bg printers.
@@ -89,6 +89,28 @@ namespace ErpNet.FP.Core.Drivers
         public abstract (ReceiptInfo, DeviceStatus) PrintReceipt(Receipt receipt);
 
         public abstract (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt);
+
+        public (bool, DeviceStatus) InvoiceRangeCheck()
+        {
+            var range = GetInvoiceRange();
+            if (!range.Ok)
+            {
+                range.AddError("E405", "Error occurred while fetching invoice range");
+                return (false, range);
+            }
+
+            if (!range.Start.HasValue
+                || !range.End.HasValue
+                || range.Start == 0
+                || range.End == 0
+                || range.Start >= range.End)
+            {
+                range.AddError("405", "Invoice range is not set");
+                return (false, range);
+            }
+
+            return (true, range);
+        }
 
         public virtual DeviceStatus PrintNonFiscalReceipt(NonFiscalReceipt nonFiscalReceipt)
         {
