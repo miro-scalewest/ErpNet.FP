@@ -15,11 +15,14 @@
         protected const byte
             CommandPrintBriefReportForDate = 0x4F,
             CommandPrintDetailedReportForDate = 0x5E,
-            CommandDatecsOpenReversalReceipt = 0x2e;
+            CommandDatecsOpenReversalReceipt = 0x2e,
+            CommandGetInvoiceRange = 0x42,
+            CommandSetInvoiceRange = 0x42;
         public override (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            bool isInvoice = false)
         {
             var header = string.Join(",",
                 new string[] {
@@ -34,6 +37,12 @@
                     "1",
                     uniqueSaleNumber
                 });
+
+            if (isInvoice)
+            {
+                header += ",I";
+            }
+
             return Request(CommandOpenFiscalReceipt, header);
         }
 
@@ -108,14 +117,14 @@
             };
         }
 
-        public override (string, DeviceStatus) OpenReversalReceipt(
-            ReversalReason reason,
+        public override (string, DeviceStatus) OpenReversalReceipt(ReversalReason reason,
             string receiptNumber,
-            System.DateTime receiptDateTime,
+            DateTime receiptDateTime,
             string fiscalMemorySerialNumber,
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            string invoiceNumber)
         {
             // Protocol:<OpNum>,<Password>,<TillNum>[,<Invoice><InvNum>][,<UNP>],< StType >< DocNo >[,< StUNP >,< StDT >,< StFMIN >][#<StornoReason>]
             var header = string.Join(",",
@@ -128,14 +137,60 @@
                         Options.ValueOrDefault("Operator.Password", "0000").WithMaxLength(Info.OperatorPasswordMaxLength)
                         :
                         operatorPassword,
-                    "1",
-                    GetReversalReasonText(reason)+receiptNumber,
-                    uniqueSaleNumber,
-                    receiptDateTime.ToString("ddMMyyHHmmss", CultureInfo.InvariantCulture),
-                    fiscalMemorySerialNumber
-                });
+                    "1"
+                    }
+                );
+
+            if (!String.IsNullOrEmpty(invoiceNumber))
+            {
+                header += "," + invoiceNumber + ",I";
+            }
+
+            header += "," + string.Join(",",
+                GetReversalReasonText(reason)+receiptNumber,
+                uniqueSaleNumber,
+                receiptDateTime.ToString("ddMMyyHHmmss", CultureInfo.InvariantCulture),
+                fiscalMemorySerialNumber
+            );
 
             return Request(CommandDatecsOpenReversalReceipt, header);
+        }
+
+        public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
+        {
+            var (_, result) =  Request(CommandSetInvoiceRange, invoiceRange.Start + "," + invoiceRange.End);
+            if (!result.Ok)
+            {
+                result.AddError("E499", "An error occurred while setting invoice range");
+            }
+
+            return result;
+        }
+
+        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        {
+            var (data, output) = Request(CommandGetInvoiceRange);
+            var result = new DeviceStatusWithInvoiceRange(output);
+
+            if (!output.Ok)
+            {
+                result.AddError("E499", "An error occurred while reading invoice range");
+                return result;
+            }
+
+            try
+            {
+                var split = data.Split(",");
+                result.Start = int.Parse(split[0]);
+                result.End = int.Parse(split[1]);
+            }
+            catch (Exception e)
+            {
+                result.AddInfo($"Error occured while parsing the invoice range");
+                result.AddError("E409", e.Message);
+            }
+
+            return result;
         }
 
         public override IDictionary<PaymentType, string> GetPaymentTypeMappings()

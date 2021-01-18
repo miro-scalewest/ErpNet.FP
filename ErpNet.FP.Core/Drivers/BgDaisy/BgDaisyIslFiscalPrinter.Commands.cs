@@ -18,7 +18,9 @@
             DaisyCommandAbortFiscalReceipt          = 0x82,
             CommandPrintBriefReportForDate          = 0x4F,
             CommandPrintDetailedReportForDate       = 0x5E,
-            DaisyCommandFiscalReceiptSaleDepartment = 0x8A;
+            DaisyCommandFiscalReceiptSaleDepartment = 0x8A,
+            DaisyCommandSetParameter                = 0x96,
+            DaisyCommandGetParameter                = 0x96;
 
         public override (string, DeviceStatus) AddItem(
             int department,
@@ -62,6 +64,41 @@
             return Request(DaisyCommandFiscalReceiptSaleDepartment, itemData.ToString());
         }
 
+        public override (string, DeviceStatus) SetInvoice(Invoice invoice)
+        {
+            var clientData = (new StringBuilder()).Append(invoice.UID);
+
+            if (invoice.VatNumber.Length > 0)
+            {
+                clientData.Append('\t').Append(invoice.VatNumber);
+
+                if (invoice.SellerName.Length > 0)
+                {
+                    clientData.Append('\t').Append(invoice.SellerName);
+
+                    if (invoice.ReceiverName.Length > 0)
+                    {
+                        clientData.Append('\t').Append(invoice.ReceiverName);
+
+                        if (invoice.BuyerName.Length > 0)
+                        {
+                            clientData.Append('\t').Append(invoice.BuyerName);
+
+                            if (invoice.ClientAddress.Length > 0)
+                            {
+                                clientData.Append('\t').Append(invoice.ClientAddress);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return Request(
+                CommandSetClientInfo,
+                clientData.ToString()
+            );
+        }
+
         public override (string, DeviceStatus) AbortReceipt()
         {
             return Request(DaisyCommandAbortFiscalReceipt);
@@ -85,6 +122,59 @@
                     : CommandPrintDetailedReportForDate,
                 headerData
             );
+        }
+
+        public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
+        {
+            var (_, setInvoiceRangeStartResult) = Request(DaisyCommandSetParameter, "P18," + invoiceRange.Start);
+            if (!setInvoiceRangeStartResult.Ok)
+            {
+                setInvoiceRangeStartResult.AddInfo("Error occurred while updating invoice start range");
+                return setInvoiceRangeStartResult;
+            }
+
+            var (_, setInvoiceRangeEndResult) = Request(DaisyCommandSetParameter, "P19," + invoiceRange.End);
+            if (!setInvoiceRangeEndResult.Ok)
+            {
+                setInvoiceRangeEndResult.AddInfo("Error occurred while updating invoice end range");
+                return setInvoiceRangeEndResult;
+            }
+
+            return setInvoiceRangeEndResult;
+        }
+
+        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        {
+            var (startResult, getInvoiceRangeStartResult) = Request(DaisyCommandSetParameter, "R18");
+            if (!getInvoiceRangeStartResult.Ok)
+            {
+                getInvoiceRangeStartResult.AddInfo("Error occurred while reading invoice start range");
+                return new DeviceStatusWithInvoiceRange(getInvoiceRangeStartResult);
+            }
+
+            var (endResult, getInvoiceRangeEndResult) = Request(DaisyCommandSetParameter, "R19");
+            if (!getInvoiceRangeEndResult.Ok)
+            {
+                getInvoiceRangeEndResult.AddInfo("Error occurred while reading invoice end range");
+                return new DeviceStatusWithInvoiceRange(getInvoiceRangeEndResult);
+            }
+
+            var result = new DeviceStatusWithInvoiceRange(getInvoiceRangeEndResult);
+            try
+            {
+                var startSplit = startResult.Split(",");
+                result.Start = int.Parse(startSplit[1]);
+
+                var endSplit = endResult.Split(",");
+                result.End = int.Parse(endSplit[1]);
+            }
+            catch (Exception)
+            {
+                result.AddInfo("Error occurred while parsing invoice range info");
+                result.AddError("E409", "Wrong format of invoice range");
+            }
+
+            return result;
         }
 
         public override (string, DeviceStatus) GetTaxIdentificationNumber()

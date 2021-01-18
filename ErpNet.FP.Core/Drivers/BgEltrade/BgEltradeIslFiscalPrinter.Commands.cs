@@ -3,17 +3,21 @@
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Text;
+    using Serilog;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation of Eltrade Bulgaria.
     /// </summary>
-    /// <seealso cref="ErpNet.FP.Drivers.BgIslFiscalPrinter" />
+    /// <seealso cref="BgIslFiscalPrinter" />
     public partial class BgEltradeIslFiscalPrinter : BgIslFiscalPrinter
     {
         protected const byte
             CommandPrintBriefReportForDate = 0x4F,
             CommandPrintDetailedReportForDate = 0x5E,
-            EltradeCommandOpenFiscalReceipt = 0x90;
+            EltradeCommandOpenFiscalReceipt = 0x90,
+            CommandGetInvoiceRange = 0x42,
+            CommandSetInvoiceRange = 0x42;
 
 
         public override IDictionary<PaymentType, string> GetPaymentTypeMappings()
@@ -38,7 +42,8 @@
         public override (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            bool isInvoice = false)
         {
             var header = string.Join(",",
                 new string[] {
@@ -48,7 +53,132 @@
                         operatorId,
                     uniqueSaleNumber
                 });
+
+            if (isInvoice)
+            {
+                header += ",I";
+            }
+
             return Request(EltradeCommandOpenFiscalReceipt, header);
+        }
+
+        public override (string, DeviceStatus) SetInvoice(Invoice invoice)
+        {
+            var clientData = (new StringBuilder()).Append(invoice.UID);
+
+            if (!String.IsNullOrEmpty(invoice.SellerName))
+            {
+                clientData.Append('\t').Append(invoice.SellerName);
+
+                if (!String.IsNullOrEmpty(invoice.ReceiverName))
+                {
+                    clientData.Append('\t').Append(invoice.ReceiverName);
+
+                    if (!String.IsNullOrEmpty(invoice.BuyerName))
+                    {
+                        clientData.Append('\t').Append(invoice.BuyerName);
+
+                        if (!String.IsNullOrEmpty(invoice.VatNumber))
+                        {
+                            clientData.Append('\t').Append(invoice.VatNumber);
+
+                            if (!String.IsNullOrEmpty(invoice.ClientAddress))
+                            {
+                                clientData.Append('\t').Append(invoice.ClientAddress);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return Request(
+                CommandSetClientInfo,
+                clientData.ToString()
+            );
+        }
+
+        public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
+        {
+            var creditNotesRange = GetRange(true);
+
+            if (creditNotesRange.Ok
+                && (
+                    (!creditNotesRange.Start.HasValue || creditNotesRange.Start == 0)
+                    || (!creditNotesRange.End.HasValue || creditNotesRange.End == 0)
+                    || creditNotesRange.Start >= creditNotesRange.End
+                )
+            )
+            {
+                Log.Information("Setting credit note range");
+                var res = SetRange(invoiceRange, true);
+
+                if (res.Ok)
+                {
+                    Log.Information("Credit note range set");
+                }
+                else
+                {
+                    Log.Error("Couldn't set credit note range");
+                    foreach (StatusMessage message in res.Messages)
+                    {
+                        if (message.Type == StatusMessageType.Error)
+                        {
+                            Log.Error($"[{message.Code}] {message.Text}");
+                        }
+                    }
+                }
+            }
+
+            return SetRange(invoiceRange);
+        }
+
+        public DeviceStatus SetRange(InvoiceRange invoiceRange, bool creditNote = false)
+        {
+            var (_, result) =  Request(CommandSetInvoiceRange, (creditNote ? "S" : "") + invoiceRange.Start + "," + invoiceRange.End);
+            if (!result.Ok)
+            {
+                result.AddError("E499", "An error occurred while setting invoice range");
+                return result;
+            }
+
+            var (_, setCreditNoteRange) =  Request(CommandSetInvoiceRange, $"S{invoiceRange.Start},{invoiceRange.End}");
+            if (!setCreditNoteRange.Ok)
+            {
+                result.AddError("E499", "An error occurred while setting credit notes range");
+                return result;
+            }
+
+            return result;
+        }
+
+        public DeviceStatusWithInvoiceRange GetRange(bool creditNote = false)
+        {
+            var (data, result) =  Request(CommandGetInvoiceRange, creditNote ? "S" : null);
+            var response = new DeviceStatusWithInvoiceRange(result);
+            if (!result.Ok)
+            {
+                response.AddError("E499", "An error occurred while setting invoice range");
+                return response;
+            }
+
+            var split = data.Split(",");
+            try
+            {
+                response.Start = int.Parse(split[0]);
+                response.End = int.Parse(split[1]);
+            }
+            catch (Exception e)
+            {
+                response.AddError("E409", "Error occurred while parsing invoice range data");
+                response.AddInfo(e.Message);
+            }
+
+            return response;
+        }
+
+        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        {
+            return GetRange();
         }
 
         public override string GetReversalReasonText(ReversalReason reversalReason)
@@ -62,14 +192,80 @@
             };
         }
 
-        public override (string, DeviceStatus) OpenReversalReceipt(
-            ReversalReason reason,
+        public override (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt)
+        {
+            var receiptInfo = new ReceiptInfo();
+
+            if (reversalReceipt.Invoice != null)
+            {
+                var (isValid, rangeCheckResult) = CreditNoteRangeCheck();
+
+                if (!rangeCheckResult.Ok || !isValid)
+                {
+                    return (receiptInfo, rangeCheckResult);
+                }
+            }
+
+            // Abort all unfinished or erroneus receipts
+            AbortReceipt();
+
+            // Receipt header
+            var (_, deviceStatus) = OpenReversalReceipt(
+                reversalReceipt.Reason,
+                reversalReceipt.ReceiptNumber,
+                reversalReceipt.ReceiptDateTime,
+                reversalReceipt.FiscalMemorySerialNumber,
+                reversalReceipt.UniqueSaleNumber,
+                reversalReceipt.Operator,
+                reversalReceipt.OperatorPassword,
+                reversalReceipt.InvoiceNumber);
+            if (!deviceStatus.Ok)
+            {
+                AbortReceipt();
+                deviceStatus.AddInfo($"Error occured while opening new fiscal reversal receipt");
+                return (receiptInfo, deviceStatus);
+            }
+
+            (receiptInfo, deviceStatus) = PrintReceiptBody(reversalReceipt);
+            if (!deviceStatus.Ok)
+            {
+                AbortReceipt();
+                deviceStatus.AddInfo($"Error occured while printing receipt items");
+            }
+
+            return (receiptInfo, deviceStatus);
+        }
+
+        public (bool, DeviceStatus) CreditNoteRangeCheck()
+        {
+            var range = GetRange(true);
+            if (!range.Ok)
+            {
+                range.AddError("E405", "Error occurred while fetching credit note range");
+                return (false, range);
+            }
+
+            if (!range.Start.HasValue
+                || !range.End.HasValue
+                || range.Start == 0
+                || range.End == 0
+                || range.Start >= range.End)
+            {
+                range.AddError("405", "Credit note range is not set");
+                return (false, range);
+            }
+
+            return (true, range);
+        }
+
+        public override (string, DeviceStatus) OpenReversalReceipt(ReversalReason reason,
             string receiptNumber,
-            System.DateTime receiptDateTime,
+            DateTime receiptDateTime,
             string fiscalMemorySerialNumber,
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            string invoiceNumber)
         {
             // Protocol: <OperName>,<UNP>[,Type[ ,<FMIN>,<Reason>,<num>[,<time>[,<inv>]]]]
             var header = string.Join(",",
@@ -85,6 +281,12 @@
                     receiptNumber,
                     receiptDateTime.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)
                 });
+
+            if (!String.IsNullOrEmpty(invoiceNumber))
+            {
+                header += "," + invoiceNumber;
+            }
+
             return Request(EltradeCommandOpenFiscalReceipt, header);
         }
 

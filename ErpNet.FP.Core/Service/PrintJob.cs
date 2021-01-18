@@ -17,7 +17,9 @@ namespace ErpNet.FP.Core.Service
         FiscalReport,
         SetDateTime,
         Duplicate,
-        Reset
+        Reset,
+        SetInvoiceNumberRange,
+        GetInvoiceNumberRange,
     }
 
     public delegate object Run(object document);
@@ -170,13 +172,31 @@ namespace ErpNet.FP.Core.Service
                                 dateTimeDocument.DeviceDateTime = DateTime.Now;
                             }
                             Result = Printer.SetDateTime(dateTimeDocument);
-                        };
+                        }
                         break;
                     case PrintJobAction.Duplicate:
                         Result = Printer.PrintDuplicate((Credentials)(Document ?? new Credentials()));
                         break;
                     case PrintJobAction.Reset:
                         Result = Printer.Reset((Credentials)(Document ?? new Credentials()));
+                        break;
+                    case PrintJobAction.SetInvoiceNumberRange:
+                        if (Document != null)
+                        {
+                            var invoiceRange = (InvoiceRange)Document;
+                            var validateStatus = Printer.ValidateInvoiceRange(invoiceRange);
+                            if (validateStatus.Ok)
+                            {
+                                Result = Printer.SetInvoiceRange(invoiceRange);
+                            }
+                            else
+                            {
+                                Result = validateStatus;
+                            }
+                        }
+                        break;
+                    case PrintJobAction.GetInvoiceNumberRange:
+                        Result = Printer.GetInvoiceRange();
                         break;
                     default:
                         break;

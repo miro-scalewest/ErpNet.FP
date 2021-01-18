@@ -46,6 +46,18 @@
             };
         }
 
+        public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
+        {
+            // TODO: implement
+            throw new StandardizedStatusMessageException("Set invoice range not supported for this device", "402");
+        }
+
+        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        {
+            // TODO: implement
+            throw new StandardizedStatusMessageException("Get invoice range not supported for this device", "402");
+        }
+
         public virtual (string, DeviceStatus) SetDeviceDateTime(DateTime dateTime)
         {
             var dateTimeData = new StringBuilder()

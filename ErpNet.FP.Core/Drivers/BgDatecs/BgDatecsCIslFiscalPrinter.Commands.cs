@@ -8,18 +8,21 @@
     /// <summary>
     /// Fiscal printer using the ISL implementation of Datecs Bulgaria.
     /// </summary>
-    /// <seealso cref="ErpNet.FP.Drivers.BgIslFiscalPrinter" />
+    /// <seealso cref="BgIslFiscalPrinter" />
     public partial class BgDatecsCIslFiscalPrinter : BgIslFiscalPrinter
     {
         protected const byte
             CommandPrintBriefReportForDate = 0x4F,
             CommandPrintDetailedReportForDate = 0x5E,
-            CommandDatecsOpenReversalReceipt = 0x2e;
+            CommandDatecsOpenReversalReceipt = 0x2e,
+            CommandGetInvoiceRange = 0x42,
+            CommandSetInvoiceRange = 0x42;
 
         public override (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            bool isInvoice = false)
         {
             var header = string.Join(",",
                 new string[] {
@@ -34,6 +37,12 @@
                     uniqueSaleNumber,
                     "1"
                 });
+
+            if (isInvoice)
+            {
+                header += ",I";
+            }
+
             return Request(CommandOpenFiscalReceipt, header);
         }
 
@@ -57,6 +66,43 @@
                 ReversalReason.TaxBaseReduction => "2",
                 _ => "0",
             };
+        }
+
+        public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
+        {
+            var (_, result) =  Request(CommandSetInvoiceRange, invoiceRange.Start + "," + invoiceRange.End);
+            if (!result.Ok)
+            {
+                result.AddError("E499", "An error occurred while setting invoice range");
+            }
+
+            return result;
+        }
+
+        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        {
+            var (data, output) = Request(CommandGetInvoiceRange);
+            var result = new DeviceStatusWithInvoiceRange(output);
+
+            if (!output.Ok)
+            {
+                result.AddError("E499", "An error occurred while reading invoice range");
+                return result;
+            }
+
+            try
+            {
+                var split = data.Split(",");
+                result.Start = int.Parse(split[0]);
+                result.End = int.Parse(split[1]);
+            }
+            catch (Exception e)
+            {
+                result.AddInfo($"Error occured while parsing the invoice range");
+                result.AddError("E409", e.Message);
+            }
+
+            return result;
         }
 
         public override (string, DeviceStatus) AddItem(
@@ -110,14 +156,14 @@
 
 
 
-        public override (string, DeviceStatus) OpenReversalReceipt(
-            ReversalReason reason,
+        public override (string, DeviceStatus) OpenReversalReceipt(ReversalReason reason,
             string receiptNumber,
-            System.DateTime receiptDateTime,
+            DateTime receiptDateTime,
             string fiscalMemorySerialNumber,
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            string invoiceNumber)
         {
             // Protocol: <OpCode>,<OpPwd>,<NSale>,<TillNmb>,<DocType>,<DocNumber>,<DocDateTime>,< FMNumber >[,< Invoice >,< InvNumber >,< Reason >]
             var header = string.Join(",",
@@ -137,6 +183,18 @@
                     receiptDateTime.ToString("ddMMyyHHmmss", CultureInfo.InvariantCulture),
                     fiscalMemorySerialNumber
                 });
+
+            try
+            {
+                if (invoiceNumber.Length > 0 && int.Parse(invoiceNumber) > 0)
+                {
+                    header += ",I," + invoiceNumber + "," + reason; // TODO: better handle reason?
+                }
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
 
             return Request(CommandDatecsOpenReversalReceipt, header);
         }
@@ -282,6 +340,24 @@
                     ? CommandPrintBriefReportForDate
                     : CommandPrintDetailedReportForDate,
                 headerData
+            );
+        }
+
+        public override (string, DeviceStatus) SetInvoice(Invoice invoice)
+        {
+            var clientData = string.Join("\t",
+                invoice.UID,
+                ((int)invoice.Type).ToString(),
+                invoice.SellerName,
+                invoice.ReceiverName,
+                invoice.BuyerName,
+                invoice.VatNumber,
+                invoice.ClientAddress
+            );
+
+            return Request(
+                CommandSetClientInfo,
+                clientData
             );
         }
 

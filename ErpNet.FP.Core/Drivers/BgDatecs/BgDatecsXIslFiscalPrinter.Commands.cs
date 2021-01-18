@@ -3,15 +3,18 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using Serilog;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation of Datecs Bulgaria.
     /// </summary>
-    /// <seealso cref="ErpNet.FP.Drivers.BgIslFiscalPrinter" />
+    /// <seealso cref="BgIslFiscalPrinter" />
     public partial class BgDatecsXIslFiscalPrinter : BgIslFiscalPrinter
     {
         protected const byte
-           DatecsXCommandOpenStornoDocument = 0x2b;
+           DatecsXCommandOpenStornoDocument = 0x2b,
+           CommandGetInvoiceRange = 0x42,
+           CommandSetInvoiceRange = 0x42;
 
         public override IDictionary<PaymentType, string> GetPaymentTypeMappings()
         {
@@ -92,6 +95,73 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                 return (commaFields[1].Trim(), deviceStatus);
             }
             return (string.Empty, deviceStatus);
+        }
+
+        public override (int?, DeviceStatus) GetCurrentInvoiceNumber()
+        {
+            var (receiptInfoResponse, deviceStatus) = Request(CommandGetReceiptInfo);
+            if (!deviceStatus.Ok)
+            {
+                deviceStatus.AddInfo("Error occurred while reading current receipt info");
+                return (null, deviceStatus);
+            }
+
+            var fields = receiptInfoResponse.Split('\t');
+            if (fields.Length < 12)
+            {
+                deviceStatus.AddInfo($"Error occured while parsing current receipt info");
+                deviceStatus.AddError("E409", "Wrong format of receipt status");
+                return (null, deviceStatus);
+            }
+
+            try
+            {
+                return (int.Parse(fields[10]) - 1, deviceStatus);
+            }
+            catch (Exception e)
+            {
+                deviceStatus = new DeviceStatus();
+                deviceStatus.AddInfo($"Error occured while parsing the current invoice number");
+                deviceStatus.AddError("E409", e.Message);
+                return (null, deviceStatus);
+            }
+        }
+
+        public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
+        {
+            var (_, result) =  Request(CommandSetInvoiceRange, $"{invoiceRange.Start}\t{invoiceRange.End}\t");
+            if (!result.Ok)
+            {
+                result.AddError("E499", "An error occurred while setting invoice range");
+            }
+
+            return result;
+        }
+
+        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        {
+            var (data, output) = Request(CommandGetInvoiceRange);
+            var result = new DeviceStatusWithInvoiceRange(output);
+
+            if (!output.Ok)
+            {
+                result.AddError("E499", "An error occurred while reading invoice range");
+                return result;
+            }
+
+            try
+            {
+                var split = data.Split("\t");
+                result.Start = int.Parse(split[1]);
+                result.End = int.Parse(split[2]);
+            }
+            catch (Exception e)
+            {
+                result.AddInfo($"Error occured while parsing the invoice range");
+                result.AddError("E409", e.Message);
+            }
+
+            return result;
         }
 
         public override (decimal?, DeviceStatus) GetReceiptAmount()
@@ -237,6 +307,26 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             );
         }
 
+        public override (string, DeviceStatus) SetInvoice(Invoice invoice)
+        {
+            var clientData = string.Join("\t",
+                invoice.SellerName,
+                invoice.ReceiverName,
+                invoice.BuyerName,
+                invoice.ClientAddress,
+                "",
+                ((int)invoice.Type).ToString(),
+                invoice.UID,
+                invoice.VatNumber,
+                ""
+            );
+
+            return Request(
+                CommandSetClientInfo,
+                clientData
+            );
+        }
+
         public override (string, DeviceStatus) FullPayment()
         {
             return Request(CommandFiscalReceiptTotal, "\t\t\t");
@@ -268,7 +358,8 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
         public override (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            bool isInvoice = false)
         {
             var header = string.Join("\t",
                 new string[] {
@@ -282,20 +373,20 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                         operatorPassword,
                     uniqueSaleNumber,
                     "1",
-                    "",
+                    isInvoice ? "I" : "",
                     ""
                 });
             return Request(CommandOpenFiscalReceipt, header);
         }
 
-        public override (string, DeviceStatus) OpenReversalReceipt(
-            ReversalReason reason,
+        public override (string, DeviceStatus) OpenReversalReceipt(ReversalReason reason,
             string receiptNumber,
-            System.DateTime receiptDateTime,
+            DateTime receiptDateTime,
             string fiscalMemorySerialNumber,
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            string invoiceNumber)
         {
             // Protocol: {OpCode}<SEP>{OpPwd}<SEP>{TillNmb}<SEP>{Storno}<SEP>{DocNum}<SEP>{DateTime}<SEP>
             //           {FM Number}<SEP>{Invoice}<SEP>{ToInvoice}<SEP>{Reason}<SEP>{NSale}<SEP>
@@ -313,8 +404,8 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                 receiptNumber,
                 receiptDateTime.ToString("dd-MM-yy HH:mm:ss", CultureInfo.InvariantCulture),
                 fiscalMemorySerialNumber,
-                "",
-                "",
+                String.IsNullOrEmpty(invoiceNumber) ? "" : "I",
+                invoiceNumber,
                 "",
                 uniqueSaleNumber,
                 "");

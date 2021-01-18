@@ -114,5 +114,25 @@ namespace ErpNet.FP.Core
         DeviceStatusWithDateTime Reset(Credentials credentials);
 
         void SetDeadLine(DateTime deadLine);
+
+        /// <summary>
+        /// Validates input for invoice range setting
+        /// </summary>
+        /// <param name="invoiceRange"></param>
+        /// <returns></returns>
+        DeviceStatus ValidateInvoiceRange(InvoiceRange invoiceRange);
+
+        /// <summary>
+        /// Tries to set invoice range in fiscal device
+        /// </summary>
+        /// <param name="invoiceRange"></param>
+        /// <returns></returns>
+        DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange);
+
+        /// <summary>
+        /// Retrieves invoice range from fiscal device
+        /// </summary>
+        /// <returns></returns>
+        DeviceStatusWithInvoiceRange GetInvoiceRange();
     }
 }

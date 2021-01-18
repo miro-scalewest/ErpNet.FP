@@ -3,9 +3,7 @@ namespace ErpNet.FP.Core.Drivers
     using System;
     using System.Collections.Generic;
     using System.Globalization;
-    using System.Threading;
-    using ErpNet.FP.Core.Configuration;
-    using Serilog;
+    using Configuration;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation.
@@ -154,6 +152,18 @@ namespace ErpNet.FP.Core.Drivers
                     }
                 }
 
+            if (receipt.Invoice != null)
+            {
+                int? invoiceNumber;
+                (invoiceNumber, deviceStatus) = GetCurrentInvoiceNumber();
+                if (!invoiceNumber.HasValue || !deviceStatus.Ok)
+                {
+                    return (receiptInfo, deviceStatus);
+                }
+
+                receiptInfo.InvoiceNumber = invoiceNumber;
+            }
+
             // Receipt payments
             if (receipt.Payments == null || receipt.Payments.Count == 0)
             {
@@ -197,20 +207,25 @@ namespace ErpNet.FP.Core.Drivers
                 }
             }
 
+            if (receipt.Invoice != null)
+            {
+                (_, deviceStatus) = SetInvoice(receipt.Invoice);
+            }
+
             itemNumber = 0;
             if (receipt.Items != null) foreach (var item in receipt.Items)
+            {
+                itemNumber++;
+                if (item.Type == ItemType.FooterComment)
                 {
-                    itemNumber++;
-                    if (item.Type == ItemType.FooterComment)
+                    (_, deviceStatus) = AddComment(item.Text);
+                    if (!deviceStatus.Ok)
                     {
-                        (_, deviceStatus) = AddComment(item.Text);
-                        if (!deviceStatus.Ok)
-                        {
-                            deviceStatus.AddInfo($"Error occurred in Item {itemNumber}");
-                            return (receiptInfo, deviceStatus);
-                        }
+                        deviceStatus.AddInfo($"Error occurred in Item {itemNumber}");
+                        return (receiptInfo, deviceStatus);
                     }
                 }
+            }
 
             // Get the receipt date and time (current fiscal device date and time)
             DateTime? dateTime;
@@ -261,6 +276,16 @@ namespace ErpNet.FP.Core.Drivers
         {
             var receiptInfo = new ReceiptInfo();
 
+            if (reversalReceipt.Invoice != null)
+            {
+                var (isValid, rangeCheckResult) = InvoiceRangeCheck();
+
+                if (!rangeCheckResult.Ok || !isValid)
+                {
+                    return (receiptInfo, rangeCheckResult);
+                }
+            }
+
             // Abort all unfinished or erroneus receipts
             AbortReceipt();
 
@@ -272,7 +297,8 @@ namespace ErpNet.FP.Core.Drivers
                 reversalReceipt.FiscalMemorySerialNumber,
                 reversalReceipt.UniqueSaleNumber,
                 reversalReceipt.Operator,
-                reversalReceipt.OperatorPassword);
+                reversalReceipt.OperatorPassword,
+                reversalReceipt.InvoiceNumber);
             if (!deviceStatus.Ok)
             {
                 AbortReceipt();
@@ -294,6 +320,16 @@ namespace ErpNet.FP.Core.Drivers
         {
             var receiptInfo = new ReceiptInfo();
 
+            if (receipt.Invoice != null)
+            {
+                var (isValid, rangeCheckResult) = InvoiceRangeCheck();
+
+                if (!rangeCheckResult.Ok || !isValid)
+                {
+                    return (receiptInfo, rangeCheckResult);
+                }
+            }
+
             // Abort all unfinished or erroneus receipts
             AbortReceipt();
 
@@ -301,7 +337,8 @@ namespace ErpNet.FP.Core.Drivers
             var (_, deviceStatus) = OpenReceipt(
                 receipt.UniqueSaleNumber,
                 receipt.Operator,
-                receipt.OperatorPassword
+                receipt.OperatorPassword,
+                receipt.Invoice != null
             );
             if (!deviceStatus.Ok)
             {
@@ -320,7 +357,7 @@ namespace ErpNet.FP.Core.Drivers
 
             return (receiptInfo, deviceStatus);
         }
-        
+
         public override DeviceStatus PrintNonFiscalReceipt(NonFiscalReceipt nonFiscalReceipt)
         {
             // Abort all unfinished or erroneous receipts

@@ -147,6 +147,18 @@
                     }
                 }
 
+            if (receipt.Invoice != null)
+            {
+                int? invoiceNumber;
+                (invoiceNumber, deviceStatus) = GetCurrentInvoiceNumber();
+                if (!invoiceNumber.HasValue || !deviceStatus.Ok)
+                {
+                    return (receiptInfo, deviceStatus);
+                }
+
+                receiptInfo.InvoiceNumber = invoiceNumber;
+            }
+
             // Receipt payments
             if (receipt.Payments == null || receipt.Payments.Count == 0)
             {
@@ -212,7 +224,7 @@
                 }
             }
 
-            return GetLastReceiptInfo();
+            return GetLastReceiptInfo(receiptInfo.InvoiceNumber);
         }
 
         public override (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt)
@@ -221,14 +233,7 @@
             AbortReceipt();
 
             // Receipt header
-            var (_, deviceStatus) = OpenReversalReceipt(
-                reversalReceipt.Reason,
-                reversalReceipt.ReceiptNumber,
-                reversalReceipt.ReceiptDateTime,
-                reversalReceipt.FiscalMemorySerialNumber,
-                reversalReceipt.UniqueSaleNumber,
-                reversalReceipt.Operator,
-                reversalReceipt.OperatorPassword);
+            var (_, deviceStatus) = OpenReversalReceipt(reversalReceipt);
             if (!deviceStatus.Ok)
             {
                 AbortReceipt();
@@ -252,12 +257,18 @@
             // Abort all unfinished or erroneus receipts
             AbortReceipt();
 
+            if (receipt.Invoice != null)
+            {
+                var (isValid, rangeCheckResult) = InvoiceRangeCheck();
+
+                if (!rangeCheckResult.Ok || !isValid)
+                {
+                    return (new ReceiptInfo(), rangeCheckResult);
+                }
+            }
+
             // Receipt header
-            var (_, deviceStatus) = OpenReceipt(
-                receipt.UniqueSaleNumber,
-                receipt.Operator,
-                receipt.OperatorPassword
-            );
+            var (_, deviceStatus) = OpenReceipt(receipt);
             if (!deviceStatus.Ok)
             {
                 AbortReceipt();
@@ -276,7 +287,7 @@
             return (receiptInfo, deviceStatus);
         }
 
-        protected virtual (ReceiptInfo, DeviceStatus) GetLastReceiptInfo()
+        protected virtual (ReceiptInfo, DeviceStatus) GetLastReceiptInfo(int? invoiceNumber)
         {
             // QR Code Data Format: <FM Number>*<Receipt Number>*<Receipt Date>*<Receipt Hour>*<Receipt Amount>
             // 50163145*000002*2020-01-28*15:29:00*30.00
@@ -323,7 +334,8 @@
                 FiscalMemorySerialNumber = qrCodeFields[0],
                 ReceiptAmount = receiptAmount,
                 ReceiptNumber = receiptNumber,
-                ReceiptDateTime = receiptDateTime
+                ReceiptDateTime = receiptDateTime,
+                InvoiceNumber = invoiceNumber ?? 0
             }, deviceStatus);
         }
 

@@ -5,7 +5,7 @@ namespace ErpNet.FP.Core.Drivers
     using System.Globalization;
     using System.Text;
     using System.Text.RegularExpressions;
-    using ErpNet.FP.Core.Configuration;
+    using Configuration;
 
     /// <summary>
     /// Fiscal printer base class for Bg printers.
@@ -89,6 +89,28 @@ namespace ErpNet.FP.Core.Drivers
         public abstract (ReceiptInfo, DeviceStatus) PrintReceipt(Receipt receipt);
 
         public abstract (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt);
+
+        public (bool, DeviceStatus) InvoiceRangeCheck()
+        {
+            var range = GetInvoiceRange();
+            if (!range.Ok)
+            {
+                range.AddError("E405", "Error occurred while fetching invoice range");
+                return (false, range);
+            }
+
+            if (!range.Start.HasValue
+                || !range.End.HasValue
+                || range.Start == 0
+                || range.End == 0
+                || range.Start >= range.End)
+            {
+                range.AddError("405", "Invoice range is not set");
+                return (false, range);
+            }
+
+            return (true, range);
+        }
 
         public virtual DeviceStatus PrintNonFiscalReceipt(NonFiscalReceipt nonFiscalReceipt)
         {
@@ -294,6 +316,10 @@ namespace ErpNet.FP.Core.Drivers
             return status;
         }
 
+        public abstract DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange);
+
+        public abstract DeviceStatusWithInvoiceRange GetInvoiceRange();
+
         public virtual DeviceStatus ValidateReversalReceipt(ReversalReceipt reversalReceipt)
         {
             var status = ValidateReceipt(reversalReceipt);
@@ -316,6 +342,12 @@ namespace ErpNet.FP.Core.Drivers
                 status.AddError("E405", $"FiscalMemorySerialNumber of the original receipt is empty");
                 return status;
             }
+            if (!String.IsNullOrEmpty(reversalReceipt.InvoiceNumber) && null == reversalReceipt.Invoice)
+            {
+                status.AddError("E405", $"Invoice details are required if invoice number is provided");
+                return status;
+            }
+
             return status;
         }
 
@@ -326,6 +358,18 @@ namespace ErpNet.FP.Core.Drivers
             {
                 status.AddError("E403", "Amount should be positive number");
             }
+            return status;
+        }
+
+        public DeviceStatus ValidateInvoiceRange(InvoiceRange invoiceRange)
+        {
+            var status = new DeviceStatus();
+
+            if (invoiceRange.Start >= invoiceRange.End)
+            {
+                status.AddError("E403", "End number should be bigger than start number");
+            }
+
             return status;
         }
 

@@ -3,6 +3,7 @@ namespace ErpNet.FP.Core.Drivers
     using System;
     using System.Globalization;
     using System.Text;
+    using Serilog;
 
     public abstract partial class BgIslFiscalPrinter : BgFiscalPrinter
     {
@@ -16,6 +17,7 @@ namespace ErpNet.FP.Core.Drivers
             CommandOpenNonFiscalReceipt = 0x26,
             CommandNonFiscalReceiptText = 0x2a,
             CommandCloseNonFiscalReceipt = 0x27,
+            CommandSetClientInfo = 0x39,
             CommandFiscalReceiptTotal = 0x35,
             CommandFiscalReceiptComment = 0x36,
             CommandFiscalReceiptSale = 0x31,
@@ -23,12 +25,15 @@ namespace ErpNet.FP.Core.Drivers
             CommandGetDateTime = 0x3e,
             CommandSetDateTime = 0x3d,
             CommandGetReceiptStatus = 0x4c,
+            CommandGetReceiptInfo = 0x67,
             CommandGetLastDocumentNumber = 0x71,
             CommandGetTaxIdentificationNumber = 0x63,
             CommandPrintLastReceiptDuplicate = 0x6D,
             CommandSubtotal = 0x33,
             CommandPrintReportForDate = 0x5E,
-            CommandReadLastReceiptQRCodeData = 0x74;
+            CommandReadLastReceiptQRCodeData = 0x74,
+            CommandGetInvoiceRange = 0x11,
+            CommandSetInvoiceRange = 0x11;
 
         public override string GetReversalReasonText(ReversalReason reversalReason)
         {
@@ -58,6 +63,36 @@ namespace ErpNet.FP.Core.Drivers
         public virtual (string, DeviceStatus) SubtotalChangeAmount(Decimal amount)
         {
             return Request(CommandSubtotal, $"10;{amount.ToString("F2", CultureInfo.InvariantCulture)}");
+        }
+
+        public virtual (int?, DeviceStatus) GetCurrentInvoiceNumber()
+        {
+            var (receiptInfoResponse, deviceStatus) = Request(CommandGetReceiptInfo);
+            if (!deviceStatus.Ok)
+            {
+                deviceStatus.AddInfo("Error occurred while reading current receipt info");
+                return (null, deviceStatus);
+            }
+
+            var fields = receiptInfoResponse.Split(',');
+            if (fields.Length < 11)
+            {
+                deviceStatus.AddInfo($"Error occured while parsing current receipt info");
+                deviceStatus.AddError("E409", "Wrong format of receipt status");
+                return (null, deviceStatus);
+            }
+
+            try
+            {
+                return (int.Parse(fields[10]) - 1, deviceStatus);
+            }
+            catch (Exception e)
+            {
+                deviceStatus = new DeviceStatus();
+                deviceStatus.AddInfo($"Error occured while parsing the current invoice number");
+                deviceStatus.AddError("E409", e.Message);
+                return (null, deviceStatus);
+            }
         }
 
         public virtual (decimal?, DeviceStatus) GetReceiptAmount()
@@ -177,7 +212,8 @@ namespace ErpNet.FP.Core.Drivers
         public virtual (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            bool isInvoice = false)
         {
             var header = string.Join(",",
                 new string[] {
@@ -191,19 +227,27 @@ namespace ErpNet.FP.Core.Drivers
                         operatorPassword,
                     uniqueSaleNumber
                 });
+
+            if (isInvoice)
+            {
+                header += "\tI";
+            }
+
             return Request(CommandOpenFiscalReceipt, header);
         }
 
-        public virtual (string, DeviceStatus) OpenReversalReceipt(
-            ReversalReason reason,
+        public virtual (string, DeviceStatus) OpenReversalReceipt(ReversalReason reason,
             string receiptNumber,
-            System.DateTime receiptDateTime,
+            DateTime receiptDateTime,
             string fiscalMemorySerialNumber,
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            string invoiceNumber)
         {
             // Protocol: {ClerkNum},{Password},{UnicSaleNum}[{Tab}{Refund}{Reason},{DocLink},{DocLinkDT}{Tab}{FiskMem}
+            //           |{Credit}|{InvLivk},{Reason},{DocLink},{DocLinkDT}{Tab}{FiskMem}]
+            // TODO: debug?
             var headerData = new StringBuilder()
                 .Append(
                     String.IsNullOrEmpty(operatorId) ?
@@ -311,6 +355,20 @@ namespace ErpNet.FP.Core.Drivers
             );
         }
 
+        public virtual (string, DeviceStatus) SetInvoice(Invoice invoice)
+        {
+            var clientData = (new StringBuilder())
+                .Append(invoice.UID)
+                .Append('\t')
+                .Append((int) invoice.Type)
+            ;
+
+            return Request(
+                CommandSetClientInfo,
+                clientData.ToString()
+            );
+        }
+
         public virtual (string, DeviceStatus) CloseReceipt()
         {
             return Request(CommandCloseFiscalReceipt);
@@ -362,6 +420,44 @@ namespace ErpNet.FP.Core.Drivers
         public virtual (string, DeviceStatus) GetRawDeviceInfo()
         {
             return Request(CommandGetDeviceInfo, "1");
+        }
+
+        public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
+        {
+            var (_, result) =  Request(CommandSetInvoiceRange, invoiceRange.Start + ";" + invoiceRange.End);
+            return result;
+        }
+
+        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        {
+            var (invoiceRangeResponse, status) = Request(CommandGetInvoiceRange);
+            var deviceStatus = new DeviceStatusWithInvoiceRange(status);
+            if (!deviceStatus.Ok)
+            {
+                deviceStatus.AddInfo("Error occurred while reading invoice range");
+                return deviceStatus;
+            }
+
+            var fields = invoiceRangeResponse.Split(';');
+            if (fields.Length < 2)
+            {
+                deviceStatus.AddInfo($"Error occured while parsing invoice range info");
+                deviceStatus.AddError("E409", "Wrong format of invoice range");
+                return deviceStatus;
+            }
+
+            try
+            {
+                deviceStatus.Start = int.Parse(fields[0]);
+                deviceStatus.End = int.Parse(fields[1]);
+            }
+            catch (Exception e)
+            {
+                deviceStatus.AddInfo($"Error occured while parsing invoice range info");
+                deviceStatus.AddError("E409", e.Message);
+            }
+
+            return deviceStatus;
         }
     }
 }

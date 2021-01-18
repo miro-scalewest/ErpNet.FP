@@ -70,7 +70,8 @@
         public override (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword,
+            bool isInvoice = false)
         {
             var header = string.Join(",",
                 new string[] {
@@ -84,14 +85,13 @@
             return Request(CommandOpenFiscalReceipt, header);
         }
 
-        public override (string, DeviceStatus) OpenReversalReceipt(
-            ReversalReason reason,
+        public override (string, DeviceStatus) OpenReversalReceipt(ReversalReason reason,
             string receiptNumber,
-            System.DateTime receiptDateTime,
+            DateTime receiptDateTime,
             string fiscalMemorySerialNumber,
             string uniqueSaleNumber,
             string operatorId,
-            string operatorPassword)
+            string operatorPassword, string invoiceNumber)
         {
             // Protocol: <OpNum>,<UNP>,<RevDocNo>[,<F1>[<F2><RevInvoiceNo>,<dd-mm-yy hh:mm:ss>,origDevDMNo]]
             var headerData = new StringBuilder()
