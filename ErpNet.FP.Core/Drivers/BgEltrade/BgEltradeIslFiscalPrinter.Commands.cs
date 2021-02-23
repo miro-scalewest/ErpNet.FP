@@ -72,32 +72,14 @@ namespace ErpNet.FP.Core.Drivers.BgEltrade
 
         public override (string, DeviceStatus) SetInvoice(Invoice invoice)
         {
-            var clientData = (new StringBuilder()).Append(invoice.UID);
+            var clientData = (new StringBuilder()).Append(invoice.UID)
+                .Append('\t').Append(!String.IsNullOrEmpty(invoice.SellerName) ? invoice.SellerName : "")
+                .Append('\t').Append(!String.IsNullOrEmpty(invoice.ReceiverName) ? invoice.ReceiverName : "")
+                .Append('\t').Append(!String.IsNullOrEmpty(invoice.BuyerName) ? invoice.BuyerName : "")
+                .Append('\t').Append(!String.IsNullOrEmpty(invoice.VatNumber) ? invoice.VatNumber : "")
+                .Append('\t').Append(!String.IsNullOrEmpty(invoice.ClientAddress) ? invoice.ClientAddress : "")
+            ;
 
-            if (!String.IsNullOrEmpty(invoice.SellerName))
-            {
-                clientData.Append('\t').Append(invoice.SellerName);
-
-                if (!String.IsNullOrEmpty(invoice.ReceiverName))
-                {
-                    clientData.Append('\t').Append(invoice.ReceiverName);
-
-                    if (!String.IsNullOrEmpty(invoice.BuyerName))
-                    {
-                        clientData.Append('\t').Append(invoice.BuyerName);
-
-                        if (!String.IsNullOrEmpty(invoice.VatNumber))
-                        {
-                            clientData.Append('\t').Append(invoice.VatNumber);
-
-                            if (!String.IsNullOrEmpty(invoice.ClientAddress))
-                            {
-                                clientData.Append('\t').Append(invoice.ClientAddress);
-                            }
-                        }
-                    }
-                }
-            }
 
             return Request(
                 CommandSetClientInfo,
