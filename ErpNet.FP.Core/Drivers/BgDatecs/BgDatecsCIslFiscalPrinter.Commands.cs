@@ -5,6 +5,7 @@
     using System.Globalization;
     using System.Text;
 
+
     /// <summary>
     /// Fiscal printer using the ISL implementation of Datecs Bulgaria.
     /// </summary>
@@ -24,19 +25,38 @@
             string operatorPassword,
             bool isInvoice = false)
         {
-            var header = string.Join(",",
-                new string[] {
-                    String.IsNullOrEmpty(operatorId) ?
-                        Options.ValueOrDefault("Operator.ID", "1")
-                        :
-                        operatorId,
-                    String.IsNullOrEmpty(operatorId) ?
-                        Options.ValueOrDefault("Operator.Password", "1").WithMaxLength(Info.OperatorPasswordMaxLength)
-                        :
-                        operatorPassword,
-                    uniqueSaleNumber,
-                    "1"
-                });
+            string header;
+
+            if (string.IsNullOrEmpty(uniqueSaleNumber))
+            {
+                header = string.Join(",",
+                    new string[]
+                    {
+                        String.IsNullOrEmpty(operatorId)
+                            ? Options.ValueOrDefault("Operator.ID", "1")
+                            : operatorId,
+                        String.IsNullOrEmpty(operatorId)
+                            ? Options.ValueOrDefault("Operator.Password", "1")
+                                .WithMaxLength(Info.OperatorPasswordMaxLength)
+                            : operatorPassword,
+                        "1"
+                    });
+            }
+            else
+            {
+                header = string.Join(",",
+                    new string[]
+                    {
+                        String.IsNullOrEmpty(operatorId)
+                            ? Options.ValueOrDefault("Operator.ID", "1")
+                            : operatorId,
+                        String.IsNullOrEmpty(operatorId)
+                            ? Options.ValueOrDefault("Operator.Password", "1")
+                                .WithMaxLength(Info.OperatorPasswordMaxLength)
+                            : operatorPassword,
+                        "1"
+                    });
+            }
 
             if (isInvoice)
             {

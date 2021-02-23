@@ -1,4 +1,4 @@
-﻿namespace ErpNet.FP.Core.Drivers.BgEltrade
+namespace ErpNet.FP.Core.Drivers.BgEltrade
 {
     using System;
     using System.Collections.Generic;
@@ -45,14 +45,22 @@
             string operatorPassword,
             bool isInvoice = false)
         {
-            var header = string.Join(",",
-                new string[] {
-                    String.IsNullOrEmpty(operatorId) ?
-                        Options.ValueOrDefault("Operator.Name", "Operator")
-                        :
-                        operatorId,
+            string theOperator = string.IsNullOrEmpty(operatorId)
+                ? Options.ValueOrDefault("Operator.Name", "Operator")
+                : operatorId;
+            string header;
+            if (string.IsNullOrEmpty(uniqueSaleNumber))
+            {
+                header = string.Join(",",
+                    theOperator);
+            }
+            else
+            {
+                header = string.Join(",",
+                    theOperator,
                     uniqueSaleNumber
-                });
+                );
+            }
 
             if (isInvoice)
             {

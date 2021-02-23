@@ -1,4 +1,4 @@
-﻿namespace ErpNet.FP.Core
+namespace ErpNet.FP.Core
 {
     using System.Collections.Generic;
     using Newtonsoft.Json;
@@ -74,7 +74,7 @@
         /// <summary>
         /// The unique sale number is a fiscally controlled number.
         /// </summary>
-        [JsonProperty(Required = Required.Always)]
+        //[JsonProperty(Required = Required.Always)]
         public string UniqueSaleNumber { get; set; } = string.Empty;
 
         public Invoice? Invoice { get; set; }
