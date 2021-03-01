@@ -6,7 +6,7 @@
     /// <summary>
     /// Represents one System Receipt, which can be printed on a fiscal printer.
     /// </summary>
-    public class NonFiscalReceipt
+    public class NonFiscalReceipt : Credentials
     {
         /// <summary>
         /// The line items of the receipt.

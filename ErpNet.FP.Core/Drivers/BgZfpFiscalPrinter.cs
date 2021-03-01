@@ -90,6 +90,39 @@
             var (_, status) = MoneyTransfer(transferAmount);
             return status;
         }
+        
+        public override DeviceStatus PrintNonFiscalReceipt(NonFiscalReceipt nonFiscalReceipt)
+        {
+            // Abort all unfinished or erroneous receipts
+            AbortReceipt();
+            CloseNonFiscalReceipt();
+
+            var (_, deviceStatus) = OpenNonFiscalReceipt(nonFiscalReceipt);
+            if (!deviceStatus.Ok)
+            {
+                AbortReceipt();
+                deviceStatus.AddInfo("Error occurred while opening new non-fiscal receipt");
+                return deviceStatus;
+            }
+
+            if (nonFiscalReceipt.Items != null)
+            {
+                foreach (FreeTextItem item in nonFiscalReceipt.Items)
+                {
+                    PrintNonFiscalReceiptText(item.Text);
+                }
+            }
+
+            (_, deviceStatus) = CloseNonFiscalReceipt();
+
+            if (!deviceStatus.Ok)
+            {
+                deviceStatus.AddInfo("Error occurred while printing non-fiscal receipt items");
+                return deviceStatus;
+            }
+
+            return deviceStatus;
+        }
 
         protected virtual (ReceiptInfo, DeviceStatus) PrintReceiptBody(Receipt receipt)
         {

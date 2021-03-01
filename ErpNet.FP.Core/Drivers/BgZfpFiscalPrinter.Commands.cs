@@ -14,6 +14,8 @@
             CommandNoFiscalRAorPOAmount = 0x3b,
             CommandOpenReceipt = 0x30,
             CommandCloseReceipt = 0x38,
+            CommandOpenNonFiscalReceipt = 0x2e,
+            CommandCloseNonFiscalReceipt = 0x2f,
             CommandFullPaymentAndCloseReceipt = 0x36,
             CommandAbortReceipt = 0x39,
             CommandSellCorrection = 0x31,
@@ -441,6 +443,34 @@
             }
 
             return deviceStatus;
+        }
+
+        public virtual (string, DeviceStatus) OpenNonFiscalReceipt(NonFiscalReceipt nonFiscalReceipt)
+        {
+            var data = string.Join(";", new string[] {
+                String.IsNullOrEmpty(nonFiscalReceipt.Operator)
+                    ? Options.ValueOrDefault("Operator.ID", "1")
+                    : nonFiscalReceipt.Operator,
+                String.IsNullOrEmpty(nonFiscalReceipt.OperatorPassword)
+                    ? Options.ValueOrDefault("Operator.Password", "0000")
+                    : nonFiscalReceipt.OperatorPassword,
+                "0", // Protocol: Reserved
+                "0", // Protocol: Printing type: 0 (step by step), 1 (postponed)
+            });
+            return Request(CommandOpenNonFiscalReceipt, data);
+        }
+        
+        public virtual (string, DeviceStatus) PrintNonFiscalReceiptText(string text)
+        {
+            return Request(
+                CommandFreeText,
+                text.WithMaxLength(Info.CommentTextMaxLength)
+            );
+        }
+        
+        public virtual (string, DeviceStatus) CloseNonFiscalReceipt()
+        {
+            return Request(CommandCloseNonFiscalReceipt);
         }
 
         public virtual (int?, DeviceStatus) GetCurrentInvoiceNumber()
