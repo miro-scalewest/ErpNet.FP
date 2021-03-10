@@ -3,6 +3,7 @@ namespace ErpNet.FP.Core.Drivers.BgEltrade
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Numerics;
     using System.Text;
     using Serilog;
 
@@ -154,8 +155,8 @@ namespace ErpNet.FP.Core.Drivers.BgEltrade
             var split = data.Split(",");
             try
             {
-                response.Start = int.Parse(split[0]);
-                response.End = int.Parse(split[1]);
+                response.Start = BigInteger.Parse(split[0]);
+                response.End = BigInteger.Parse(split[1]);
             }
             catch (Exception e)
             {

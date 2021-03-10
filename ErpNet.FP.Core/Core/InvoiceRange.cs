@@ -1,15 +1,17 @@
 ﻿namespace ErpNet.FP.Core
 {
+    using System.Numerics;
+
     public class InvoiceRange
     {
         /// <summary>
         /// Range start
         /// </summary>
-        public int Start { get; set; } = 0;
+        public BigInteger Start { get; set; } = 0;
 
         /// <summary>
         /// Receiver name
         /// </summary>
-        public int End { get; set; } = 0;
+        public BigInteger End { get; set; } = 0;
     }
 }

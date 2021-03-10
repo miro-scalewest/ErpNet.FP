@@ -3,12 +3,13 @@
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Numerics;
     using System.Text;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation of Datecs Bulgaria.
     /// </summary>
-    /// <seealso cref="ErpNet.FP.Drivers.BgIslFiscalPrinter" />
+    /// <seealso cref="BgIslFiscalPrinter" />
     public partial class BgDatecsPIslFiscalPrinter : BgIslFiscalPrinter
     {
 
@@ -181,8 +182,8 @@
             try
             {
                 var split = data.Split(",");
-                result.Start = int.Parse(split[0]);
-                result.End = int.Parse(split[1]);
+                result.Start = BigInteger.Parse(split[0]);
+                result.End = BigInteger.Parse(split[1]);
             }
             catch (Exception e)
             {

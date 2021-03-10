@@ -2,6 +2,7 @@ namespace ErpNet.FP.Core.Drivers
 {
     using System;
     using System.Globalization;
+    using System.Numerics;
     using System.Text;
     using Serilog;
 
@@ -65,7 +66,7 @@ namespace ErpNet.FP.Core.Drivers
             return Request(CommandSubtotal, $"10;{amount.ToString("F2", CultureInfo.InvariantCulture)}");
         }
 
-        public virtual (int?, DeviceStatus) GetCurrentInvoiceNumber()
+        public virtual (BigInteger?, DeviceStatus) GetCurrentInvoiceNumber()
         {
             var (receiptInfoResponse, deviceStatus) = Request(CommandGetReceiptInfo);
             if (!deviceStatus.Ok)
@@ -84,7 +85,7 @@ namespace ErpNet.FP.Core.Drivers
 
             try
             {
-                return (int.Parse(fields[10]) - 1, deviceStatus);
+                return (BigInteger.Parse(fields[10]) - 1, deviceStatus);
             }
             catch (Exception e)
             {
@@ -448,8 +449,8 @@ namespace ErpNet.FP.Core.Drivers
 
             try
             {
-                deviceStatus.Start = int.Parse(fields[0]);
-                deviceStatus.End = int.Parse(fields[1]);
+                deviceStatus.Start = BigInteger.Parse(fields[0]);
+                deviceStatus.End = BigInteger.Parse(fields[1]);
             }
             catch (Exception e)
             {

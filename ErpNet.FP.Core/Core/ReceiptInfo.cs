@@ -1,5 +1,7 @@
 ﻿namespace ErpNet.FP.Core
 {
+    using System.Numerics;
+
     /// <summary>
     /// Information returned after printing receipt.
     /// </summary>
@@ -20,7 +22,7 @@
         /// <summary>
         /// Invoice number of the receipt
         /// </summary>
-        public int? InvoiceNumber = 0;
+        public BigInteger? InvoiceNumber = 0;
         /// <summary>
         /// The fiscal memory number.
         /// </summary>

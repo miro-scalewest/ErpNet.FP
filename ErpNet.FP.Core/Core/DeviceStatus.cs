@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Numerics;
     using System.Runtime.Serialization;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
@@ -124,8 +125,8 @@
 
     public class DeviceStatusWithInvoiceRange : DeviceStatus
     {
-        public int? Start { get; set; }
-        public int? End { get; set; }
+        public BigInteger? Start { get; set; }
+        public BigInteger? End { get; set; }
 
         public DeviceStatusWithInvoiceRange(DeviceStatus status) : base()
         {
@@ -155,7 +156,7 @@
         /// <summary>
         /// Invoice number of the receipt
         /// </summary>
-        public int? InvoiceNumber = 0;
+        public BigInteger? InvoiceNumber = 0;
 
         public DeviceStatusWithReceiptInfo(DeviceStatus status, ReceiptInfo info) : base()
         {

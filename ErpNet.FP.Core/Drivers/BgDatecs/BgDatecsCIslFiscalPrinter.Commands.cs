@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Numerics;
     using System.Text;
 
 
@@ -113,8 +114,8 @@
             try
             {
                 var split = data.Split(",");
-                result.Start = int.Parse(split[0]);
-                result.End = int.Parse(split[1]);
+                result.Start = BigInteger.Parse(split[0]);
+                result.End = BigInteger.Parse(split[1]);
             }
             catch (Exception e)
             {

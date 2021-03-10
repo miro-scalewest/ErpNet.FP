@@ -3,6 +3,7 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Numerics;
     using Serilog;
 
     /// <summary>
@@ -97,7 +98,7 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             return (string.Empty, deviceStatus);
         }
 
-        public override (int?, DeviceStatus) GetCurrentInvoiceNumber()
+        public override (BigInteger?, DeviceStatus) GetCurrentInvoiceNumber()
         {
             var (receiptInfoResponse, deviceStatus) = Request(CommandGetReceiptInfo);
             if (!deviceStatus.Ok)
@@ -116,7 +117,7 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
 
             try
             {
-                return (int.Parse(fields[10]) - 1, deviceStatus);
+                return (BigInteger.Parse(fields[10]) - 1, deviceStatus);
             }
             catch (Exception e)
             {
@@ -152,8 +153,8 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             try
             {
                 var split = data.Split("\t");
-                result.Start = int.Parse(split[1]);
-                result.End = int.Parse(split[2]);
+                result.Start = BigInteger.Parse(split[1]);
+                result.End = BigInteger.Parse(split[2]);
             }
             catch (Exception e)
             {

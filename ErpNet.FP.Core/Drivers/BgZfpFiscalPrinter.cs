@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Numerics;
     using ErpNet.FP.Core.Configuration;
 
     /// <summary>
@@ -182,7 +183,7 @@
 
             if (receipt.Invoice != null)
             {
-                int? invoiceNumber;
+                BigInteger? invoiceNumber;
                 (invoiceNumber, deviceStatus) = GetCurrentInvoiceNumber();
                 if (!invoiceNumber.HasValue || !deviceStatus.Ok)
                 {
@@ -320,7 +321,7 @@
             return (receiptInfo, deviceStatus);
         }
 
-        protected virtual (ReceiptInfo, DeviceStatus) GetLastReceiptInfo(int? invoiceNumber)
+        protected virtual (ReceiptInfo, DeviceStatus) GetLastReceiptInfo(BigInteger? invoiceNumber)
         {
             // QR Code Data Format: <FM Number>*<Receipt Number>*<Receipt Date>*<Receipt Hour>*<Receipt Amount>
             // 50163145*000002*2020-01-28*15:29:00*30.00

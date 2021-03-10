@@ -3,12 +3,13 @@ namespace ErpNet.FP.Core.Drivers
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Numerics;
     using Configuration;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation.
     /// </summary>
-    /// <seealso cref="ErpNet.FP.BgFiscalPrinter" />
+    /// <seealso cref="BgFiscalPrinter" />
     public abstract partial class BgIslFiscalPrinter : BgFiscalPrinter
     {
         protected BgIslFiscalPrinter(
@@ -154,7 +155,7 @@ namespace ErpNet.FP.Core.Drivers
 
             if (receipt.Invoice != null)
             {
-                int? invoiceNumber;
+                BigInteger? invoiceNumber;
                 (invoiceNumber, deviceStatus) = GetCurrentInvoiceNumber();
                 if (!invoiceNumber.HasValue || !deviceStatus.Ok)
                 {

@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Numerics;
     using System.Text;
     using ErpNet.FP.Core.Configuration;
     using Newtonsoft.Json;
@@ -10,7 +11,7 @@
     /// <summary>
     /// Fiscal printer using the ISL implementation of Daisy Bulgaria.
     /// </summary>
-    /// <seealso cref="ErpNet.FP.Drivers.BgIslFiscalPrinter" />
+    /// <seealso cref="BgIslFiscalPrinter" />
     public partial class BgDaisyIslFiscalPrinter : BgIslFiscalPrinter
     {
         protected const byte
@@ -163,10 +164,10 @@
             try
             {
                 var startSplit = startResult.Split(",");
-                result.Start = int.Parse(startSplit[1]);
+                result.Start = BigInteger.Parse(startSplit[1]);
 
                 var endSplit = endResult.Split(",");
-                result.End = int.Parse(endSplit[1]);
+                result.End = BigInteger.Parse(endSplit[1]);
             }
             catch (Exception)
             {
