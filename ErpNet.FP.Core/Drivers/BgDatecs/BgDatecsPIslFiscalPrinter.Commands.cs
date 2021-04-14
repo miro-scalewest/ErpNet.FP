@@ -35,14 +35,15 @@
                         Options.ValueOrDefault("Operator.Password", "0000").WithMaxLength(Info.OperatorPasswordMaxLength)
                         :
                         operatorPassword,
-                    "1",
-                    uniqueSaleNumber
+                    "1"
                 });
 
             if (isInvoice)
             {
                 header += ",I";
             }
+
+            header += "," + uniqueSaleNumber;
 
             return Request(CommandOpenFiscalReceipt, header);
         }
@@ -128,7 +129,8 @@
             string invoiceNumber)
         {
             // Protocol:<OpNum>,<Password>,<TillNum>[,<Invoice><InvNum>][,<UNP>],< StType >< DocNo >[,< StUNP >,< StDT >,< StFMIN >][#<StornoReason>]
-            var header = string.Join(",",
+            var header = string.Join(
+                ",",
                 new string[] {
                     String.IsNullOrEmpty(operatorId) ?
                         Options.ValueOrDefault("Operator.ID", "1")
@@ -139,12 +141,12 @@
                         :
                         operatorPassword,
                     "1"
-                    }
-                );
+                }
+            );
 
             if (!String.IsNullOrEmpty(invoiceNumber))
             {
-                header += "," + invoiceNumber + ",I";
+                header += ",I," + invoiceNumber;
             }
 
             header += "," + string.Join(",",
