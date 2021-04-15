@@ -112,46 +112,46 @@ namespace ErpNet.FP.Core.Drivers
             uint itemNumber = 0;
             // Receipt items
             if (receipt.Items != null) foreach (var item in receipt.Items)
+            {
+                itemNumber++;
+                if (item.Type == ItemType.Comment)
                 {
-                    itemNumber++;
-                    if (item.Type == ItemType.Comment)
+                    (_, deviceStatus) = AddComment(item.Text);
+                }
+                else if (item.Type == ItemType.Sale)
+                {
+                    try
                     {
-                        (_, deviceStatus) = AddComment(item.Text);
+                        (_, deviceStatus) = AddItem(
+                            item.Department,
+                            item.Text,
+                            item.UnitPrice,
+                            item.TaxGroup,
+                            item.Quantity,
+                            item.PriceModifierValue,
+                            item.PriceModifierType);
                     }
-                    else if (item.Type == ItemType.Sale)
+                    catch (StandardizedStatusMessageException e)
                     {
-                        try
-                        {
-                            (_, deviceStatus) = AddItem(
-                                item.Department,
-                                item.Text,
-                                item.UnitPrice,
-                                item.TaxGroup,
-                                item.Quantity,
-                                item.PriceModifierValue,
-                                item.PriceModifierType);
-                        }
-                        catch (StandardizedStatusMessageException e)
-                        {
-                            deviceStatus = new DeviceStatus();
-                            deviceStatus.AddError(e.Code, e.Message);
-                            break;
-                        }
-                    }
-                    else if (item.Type == ItemType.SurchargeAmount)
-                    {
-                        (_, deviceStatus) = SubtotalChangeAmount(item.Amount);
-                    }
-                    else if (item.Type == ItemType.DiscountAmount)
-                    {                        
-                        (_, deviceStatus) = SubtotalChangeAmount(-item.Amount);
-                    }
-                    if (!deviceStatus.Ok)
-                    {
-                        deviceStatus.AddInfo($"Error occurred in Item {itemNumber}");
-                        return (receiptInfo, deviceStatus);
+                        deviceStatus = new DeviceStatus();
+                        deviceStatus.AddError(e.Code, e.Message);
+                        break;
                     }
                 }
+                else if (item.Type == ItemType.SurchargeAmount)
+                {
+                    (_, deviceStatus) = SubtotalChangeAmount(item.Amount);
+                }
+                else if (item.Type == ItemType.DiscountAmount)
+                {                        
+                    (_, deviceStatus) = SubtotalChangeAmount(-item.Amount);
+                }
+                if (!deviceStatus.Ok)
+                {
+                    deviceStatus.AddInfo($"Error occurred in Item {itemNumber}");
+                    return (receiptInfo, deviceStatus);
+                }
+            }
 
             if (receipt.Invoice != null)
             {

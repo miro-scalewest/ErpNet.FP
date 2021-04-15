@@ -362,6 +362,16 @@ namespace ErpNet.FP.Core.Drivers
                 .Append(invoice.UID)
                 .Append('\t')
                 .Append((int) invoice.Type)
+                .Append('\t')
+                .Append(invoice.SellerName)
+                .Append('\t')
+                .Append(invoice.ReceiverName)
+                .Append('\t')
+                .Append(invoice.BuyerName)
+                .Append('\t')
+                .Append(invoice.VatNumber)
+                .Append('\t')
+                .Append(invoice.ClientAddress)
             ;
 
             return Request(
