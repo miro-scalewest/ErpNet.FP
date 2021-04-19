@@ -146,7 +146,7 @@
 
             if (!String.IsNullOrEmpty(invoiceNumber))
             {
-                header += ",I," + invoiceNumber;
+                header += ",I" + invoiceNumber;
             }
 
             header += "," + string.Join(",",
