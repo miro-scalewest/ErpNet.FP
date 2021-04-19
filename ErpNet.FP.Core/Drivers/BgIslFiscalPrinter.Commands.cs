@@ -358,10 +358,25 @@ namespace ErpNet.FP.Core.Drivers
 
         public virtual (string, DeviceStatus) SetInvoice(Invoice invoice)
         {
+            string uid = "";
+            
+            switch (invoice.Type)
+            {
+                case UIDType.PersonalID:
+                    uid = "#";
+                    break;
+                case UIDType.PersonalIDForeigner:
+                    uid = "*";
+                    break;
+                case UIDType.ServiceNumber:
+                    uid = "^";
+                    break;
+            }
+
+            uid += invoice.UID;
+            
             var clientData = (new StringBuilder())
-                .Append(invoice.UID)
-                .Append('\t')
-                .Append((int) invoice.Type)
+                .Append(uid)
                 .Append('\t')
                 .Append(invoice.SellerName)
                 .Append('\t')
