@@ -264,6 +264,7 @@ namespace ErpNet.FP.Core.Drivers
         public override (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt)
         {
             var receiptInfo = new ReceiptInfo();
+            BigInteger? invoiceNumber = null;
 
             if (reversalReceipt.Invoice != null)
             {
@@ -273,6 +274,14 @@ namespace ErpNet.FP.Core.Drivers
                 {
                     return (receiptInfo, rangeCheckResult);
                 }
+
+                var (invoiceNumberTemp, deviceStatusInv) = GetCurrentInvoiceNumber();
+                if (!invoiceNumberTemp.HasValue || !deviceStatusInv.Ok)
+                {
+                    return (receiptInfo, deviceStatusInv);
+                }
+
+                invoiceNumber = invoiceNumberTemp;
             }
 
             // Abort all unfinished or erroneus receipts
@@ -300,6 +309,11 @@ namespace ErpNet.FP.Core.Drivers
             {
                 AbortReceipt();
                 deviceStatus.AddInfo($"Error occured while printing receipt items");
+            }
+
+            if (invoiceNumber.HasValue)
+            {
+                receiptInfo.InvoiceNumber = invoiceNumber;
             }
 
             return (receiptInfo, deviceStatus);
@@ -353,7 +367,7 @@ namespace ErpNet.FP.Core.Drivers
                 deviceStatus.AddInfo($"Error occured while printing receipt items");
             }
             
-            if (invoiceNumber.HasValue && invoiceNumber != null)
+            if (invoiceNumber.HasValue)
             {
                 receiptInfo.InvoiceNumber = invoiceNumber;
             }
