@@ -85,7 +85,7 @@ namespace ErpNet.FP.Core.Drivers
 
             try
             {
-                return (BigInteger.Parse(fields[10]) - 1, deviceStatus);
+                return (BigInteger.Parse(fields[10]), deviceStatus);
             }
             catch (Exception e)
             {

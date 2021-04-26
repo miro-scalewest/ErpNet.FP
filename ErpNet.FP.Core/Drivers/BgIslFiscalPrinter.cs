@@ -153,18 +153,6 @@ namespace ErpNet.FP.Core.Drivers
                 }
             }
 
-            if (receipt.Invoice != null)
-            {
-                BigInteger? invoiceNumber;
-                (invoiceNumber, deviceStatus) = GetCurrentInvoiceNumber();
-                if (!invoiceNumber.HasValue || !deviceStatus.Ok)
-                {
-                    return (receiptInfo, deviceStatus);
-                }
-
-                receiptInfo.InvoiceNumber = invoiceNumber;
-            }
-
             // Receipt payments
             if (receipt.Payments == null || receipt.Payments.Count == 0)
             {
@@ -320,6 +308,7 @@ namespace ErpNet.FP.Core.Drivers
         public override (ReceiptInfo, DeviceStatus) PrintReceipt(Receipt receipt)
         {
             var receiptInfo = new ReceiptInfo();
+            BigInteger? invoiceNumber = null;
 
             if (receipt.Invoice != null)
             {
@@ -329,6 +318,14 @@ namespace ErpNet.FP.Core.Drivers
                 {
                     return (receiptInfo, rangeCheckResult);
                 }
+                
+                var (invoiceNumberTemp, deviceStatusInv) = GetCurrentInvoiceNumber();
+                if (!invoiceNumberTemp.HasValue || !deviceStatusInv.Ok)
+                {
+                    return (receiptInfo, deviceStatusInv);
+                }
+
+                invoiceNumber = invoiceNumberTemp;
             }
 
             // Abort all unfinished or erroneus receipts
@@ -354,6 +351,11 @@ namespace ErpNet.FP.Core.Drivers
             {
                 AbortReceipt();
                 deviceStatus.AddInfo($"Error occured while printing receipt items");
+            }
+            
+            if (invoiceNumber.HasValue && invoiceNumber != null)
+            {
+                receiptInfo.InvoiceNumber = invoiceNumber;
             }
 
             return (receiptInfo, deviceStatus);
