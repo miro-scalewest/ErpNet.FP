@@ -71,6 +71,62 @@ namespace ErpNet.FP.Core.Drivers.BgEltrade
             return Request(EltradeCommandOpenFiscalReceipt, header);
         }
 
+        public override (ReceiptInfo, DeviceStatus) PrintReceipt(Receipt receipt)
+        {
+            var receiptInfo = new ReceiptInfo();
+            BigInteger? invoiceNumber = null;
+
+            // Abort all unfinished or erroneous receipts
+            AbortReceipt();
+
+            // Opening receipt
+            var (_, deviceStatus) = OpenReceipt(
+                receipt.UniqueSaleNumber,
+                receipt.Operator,
+                receipt.OperatorPassword,
+                receipt.Invoice != null
+            );
+            if (!deviceStatus.Ok)
+            {
+                AbortReceipt();
+                deviceStatus.AddInfo($"Error occured while opening new fiscal receipt");
+                return (receiptInfo, deviceStatus);
+            }
+
+            if (receipt.Invoice != null)
+            {
+                var (isValid, rangeCheckResult) = InvoiceRangeCheck();
+
+                if (!rangeCheckResult.Ok || !isValid)
+                {
+                    return (receiptInfo, rangeCheckResult);
+                }
+                
+                var (invoiceNumberTemp, deviceStatusInv) = GetCurrentInvoiceNumber();
+                if (!invoiceNumberTemp.HasValue || !deviceStatusInv.Ok)
+                {
+                    return (receiptInfo, deviceStatusInv);
+                }
+
+                invoiceNumber = invoiceNumberTemp;
+            }
+
+            // Printing receipt's body
+            (receiptInfo, deviceStatus) = PrintReceiptBody(receipt);
+            if (!deviceStatus.Ok)
+            {
+                AbortReceipt();
+                deviceStatus.AddInfo($"Error occured while printing receipt items");
+            }
+            
+            if (invoiceNumber.HasValue)
+            {
+                receiptInfo.InvoiceNumber = invoiceNumber;
+            }
+
+            return (receiptInfo, deviceStatus);
+        }
+
         public override (string, DeviceStatus) SetInvoice(Invoice invoice)
         {
             var clientData = (new StringBuilder()).Append(invoice.UID)
@@ -186,27 +242,9 @@ namespace ErpNet.FP.Core.Drivers.BgEltrade
         public override (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt)
         {
             var receiptInfo = new ReceiptInfo();
-            BigInteger? invoiceNumber = null;
+            BigInteger? creditNoteNumber = null;
 
-            if (reversalReceipt.Invoice != null)
-            {
-                var (isValid, rangeCheckResult) = CreditNoteRangeCheck();
-
-                if (!rangeCheckResult.Ok || !isValid)
-                {
-                    return (receiptInfo, rangeCheckResult);
-                }
-
-                var (invoiceNumberTemp, deviceStatusInv) = GetCurrentInvoiceNumber();
-                if (!invoiceNumberTemp.HasValue || !deviceStatusInv.Ok)
-                {
-                    return (receiptInfo, deviceStatusInv);
-                }
-
-                invoiceNumber = invoiceNumberTemp;
-            }
-
-            // Abort all unfinished or erroneus receipts
+            // Abort all unfinished or erroneous receipts
             AbortReceipt();
 
             // Receipt header
@@ -233,10 +271,174 @@ namespace ErpNet.FP.Core.Drivers.BgEltrade
                 deviceStatus.AddInfo($"Error occured while printing receipt items");
             }
 
-            if (invoiceNumber.HasValue)
+            if (creditNoteNumber.HasValue)
             {
-                receiptInfo.InvoiceNumber = invoiceNumber;
+                receiptInfo.InvoiceNumber = creditNoteNumber;
             }
+
+            return (receiptInfo, deviceStatus);
+        }
+
+        public override (ReceiptInfo, DeviceStatus) PrintReceiptBody(Receipt receipt)
+        {
+            var receiptInfo = new ReceiptInfo();
+
+            var (fiscalMemorySerialNumber, deviceStatus) = GetFiscalMemorySerialNumber();
+            if (!deviceStatus.Ok)
+            {
+                return (receiptInfo, deviceStatus);
+            }
+
+            receiptInfo.FiscalMemorySerialNumber = fiscalMemorySerialNumber;
+
+            uint itemNumber = 0;
+            // Receipt items
+            if (receipt.Items != null) foreach (var item in receipt.Items)
+            {
+                itemNumber++;
+                if (item.Type == ItemType.Comment)
+                {
+                    (_, deviceStatus) = AddComment(item.Text);
+                }
+                else if (item.Type == ItemType.Sale)
+                {
+                    try
+                    {
+                        (_, deviceStatus) = AddItem(
+                            item.Department,
+                            item.Text,
+                            item.UnitPrice,
+                            item.TaxGroup,
+                            item.Quantity,
+                            item.PriceModifierValue,
+                            item.PriceModifierType);
+                    }
+                    catch (StandardizedStatusMessageException e)
+                    {
+                        deviceStatus = new DeviceStatus();
+                        deviceStatus.AddError(e.Code, e.Message);
+                        break;
+                    }
+                }
+                else if (item.Type == ItemType.SurchargeAmount)
+                {
+                    (_, deviceStatus) = SubtotalChangeAmount(item.Amount);
+                }
+                else if (item.Type == ItemType.DiscountAmount)
+                {                        
+                    (_, deviceStatus) = SubtotalChangeAmount(-item.Amount);
+                }
+                if (!deviceStatus.Ok)
+                {
+                    deviceStatus.AddInfo($"Error occurred in Item {itemNumber}");
+                    return (receiptInfo, deviceStatus);
+                }
+            }
+
+            // Receipt payments
+            if (receipt.Payments == null || receipt.Payments.Count == 0)
+            {
+                (_, deviceStatus) = FullPayment();
+                if (!deviceStatus.Ok)
+                {
+                    deviceStatus.AddInfo($"Error occurred while making full payment in cash");
+                    return (receiptInfo, deviceStatus);
+                }
+            }
+            else
+            {
+                uint paymentNumber = 0;
+                foreach (var payment in receipt.Payments)
+                {
+                    paymentNumber++;
+
+                    if (payment.PaymentType == PaymentType.Change)
+                    {
+                        // PaymentType.Change is abstract payment, 
+                        // used only for computing the total sum of the payments.
+                        // So we will skip it.
+                        continue;
+                    }
+
+                    try
+                    {
+                        (_, deviceStatus) = AddPayment(payment.Amount, payment.PaymentType);
+                    }
+                    catch (StandardizedStatusMessageException e)
+                    {
+                        deviceStatus = new DeviceStatus();
+                        deviceStatus.AddError(e.Code, e.Message);
+                    }
+
+                    if (!deviceStatus.Ok)
+                    {
+                        deviceStatus.AddInfo($"Error occurred in Payment {paymentNumber}");
+                        return (receiptInfo, deviceStatus);
+                    }
+                }
+            }
+
+            if (receipt.Invoice != null)
+            {
+                (_, deviceStatus) = SetInvoice(receipt.Invoice);
+            }
+
+            itemNumber = 0;
+            if (receipt.Items != null) foreach (var item in receipt.Items)
+            {
+                itemNumber++;
+                if (item.Type == ItemType.FooterComment)
+                {
+                    (_, deviceStatus) = AddComment(item.Text);
+                    if (!deviceStatus.Ok)
+                    {
+                        deviceStatus.AddInfo($"Error occurred in Item {itemNumber}");
+                        return (receiptInfo, deviceStatus);
+                    }
+                }
+            }
+
+            // Get the receipt date and time (current fiscal device date and time)
+            DateTime? dateTime;
+            (dateTime, deviceStatus) = GetDateTime();
+            if (!dateTime.HasValue || !deviceStatus.Ok)
+            {
+                AbortReceipt();
+                return (receiptInfo, deviceStatus);
+            }
+            receiptInfo.ReceiptDateTime = dateTime.Value;
+
+            // Get receipt amount
+            decimal? receiptAmount;
+            (receiptAmount, deviceStatus) = GetReceiptAmount();
+            if (!receiptAmount.HasValue || !deviceStatus.Ok)
+            {
+                AbortReceipt();
+                return (receiptInfo, deviceStatus);
+            }
+            receiptInfo.ReceiptAmount = receiptAmount.Value;
+
+            // Closing receipt
+            string closeReceiptResponse;
+            (closeReceiptResponse, deviceStatus) = CloseReceipt();
+            if (!deviceStatus.Ok)
+            {
+                AbortReceipt();
+                deviceStatus.AddInfo($"Error occurred while closing the receipt");
+                return (receiptInfo, deviceStatus);
+            }
+
+            // Get receipt number
+            string lastDocumentNumberResponse;
+            (lastDocumentNumberResponse, deviceStatus) = GetLastDocumentNumber(closeReceiptResponse);
+            if (!deviceStatus.Ok || String.IsNullOrWhiteSpace(lastDocumentNumberResponse))
+            {
+                AbortReceipt();
+                deviceStatus.AddInfo($"Error occurred while reading last receipt number");
+                deviceStatus.AddError("E409", $"Last receipt number is empty");
+                return (receiptInfo, deviceStatus);
+            }
+            receiptInfo.ReceiptNumber = lastDocumentNumberResponse;
 
             return (receiptInfo, deviceStatus);
         }

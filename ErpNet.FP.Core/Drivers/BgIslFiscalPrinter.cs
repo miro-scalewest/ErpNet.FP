@@ -342,7 +342,7 @@ namespace ErpNet.FP.Core.Drivers
                 invoiceNumber = invoiceNumberTemp;
             }
 
-            // Abort all unfinished or erroneus receipts
+            // Abort all unfinished or erroneous receipts
             AbortReceipt();
 
             // Opening receipt

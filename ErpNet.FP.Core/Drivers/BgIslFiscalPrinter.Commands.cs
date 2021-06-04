@@ -75,6 +75,8 @@ namespace ErpNet.FP.Core.Drivers
                 return (null, deviceStatus);
             }
 
+            Log.Information("--------------------------");
+            Log.Information(receiptInfoResponse);
             var fields = receiptInfoResponse.Split(',');
             if (fields.Length < 11)
             {
