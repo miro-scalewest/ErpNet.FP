@@ -223,6 +223,31 @@ namespace ErpNet.FP.Core.Drivers.BgEltrade
             return response;
         }
 
+        public (BigInteger?, DeviceStatus) GetCurrentInvoiceNumber(bool creditNote = false)
+        {
+            var (data, result) =  Request(CommandGetInvoiceRange, creditNote ? "S" : null);
+            BigInteger? current = null;
+
+            if (!result.Ok)
+            {
+                result.AddError("E499", "An error occurred while setting invoice range [2]");
+                return (null, result);
+            }
+
+            var split = data.Split(",");
+            try
+            {
+                current = BigInteger.Parse(split[2]);
+            }
+            catch (Exception e)
+            {
+                result.AddError("E409", "Error occurred while parsing invoice range data [2]");
+                result.AddInfo(e.Message);
+            }
+
+            return (current, result);
+        }
+
         public override DeviceStatusWithInvoiceRange GetInvoiceRange()
         {
             return GetRange();
@@ -243,6 +268,17 @@ namespace ErpNet.FP.Core.Drivers.BgEltrade
         {
             var receiptInfo = new ReceiptInfo();
             BigInteger? creditNoteNumber = null;
+
+            if (reversalReceipt.Invoice != null)
+            {
+               var (creditNumber, response) = GetCurrentInvoiceNumber(true);
+               if (!response.Ok)
+               {
+                   return (receiptInfo, response);
+               }
+
+               creditNoteNumber = creditNumber;
+            }
 
             // Abort all unfinished or erroneous receipts
             AbortReceipt();
