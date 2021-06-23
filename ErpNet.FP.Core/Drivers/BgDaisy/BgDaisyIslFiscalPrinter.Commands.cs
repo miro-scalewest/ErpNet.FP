@@ -5,8 +5,6 @@
     using System.Globalization;
     using System.Numerics;
     using System.Text;
-    using ErpNet.FP.Core.Configuration;
-    using Newtonsoft.Json;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation of Daisy Bulgaria.
@@ -144,38 +142,196 @@
             return setInvoiceRangeEndResult;
         }
 
-        public override DeviceStatusWithInvoiceRange GetInvoiceRange()
+        public override (bool, DeviceStatus) InvoiceRangeCheck() 
         {
-            var (startResult, getInvoiceRangeStartResult) = Request(DaisyCommandSetParameter, "R18");
-            if (!getInvoiceRangeStartResult.Ok)
+            // Currently won't support any daisy range retrieval
+            var status = new DeviceStatus();
+            status.AddInfo("Daisy invoice range not supported yet");
+            return (true, status);
+        }
+
+        public override (ReceiptInfo, DeviceStatus) PrintReceipt(Receipt receipt)
+        {
+            var receiptInfo = new ReceiptInfo();
+            BigInteger? invoiceNumber = null;
+
+            // Abort all unfinished or erroneous receipts
+            AbortReceipt();
+
+            // Opening receipt
+            var (_, deviceStatus) = OpenReceipt(
+                receipt.UniqueSaleNumber,
+                receipt.Operator,
+                receipt.OperatorPassword,
+                receipt.Invoice != null
+            );
+            if (!deviceStatus.Ok)
             {
-                getInvoiceRangeStartResult.AddInfo("Error occurred while reading invoice start range");
-                return new DeviceStatusWithInvoiceRange(getInvoiceRangeStartResult);
+                AbortReceipt();
+                deviceStatus.AddInfo($"Error occured while opening new fiscal receipt");
+                return (receiptInfo, deviceStatus);
             }
 
-            var (endResult, getInvoiceRangeEndResult) = Request(DaisyCommandSetParameter, "R19");
-            if (!getInvoiceRangeEndResult.Ok)
+            if (receipt.Invoice != null)
             {
-                getInvoiceRangeEndResult.AddInfo("Error occurred while reading invoice end range");
-                return new DeviceStatusWithInvoiceRange(getInvoiceRangeEndResult);
+                var (isValid, rangeCheckResult) = InvoiceRangeCheck();
+
+                if (!rangeCheckResult.Ok || !isValid)
+                {
+                    return (receiptInfo, rangeCheckResult);
+                }
+                
+                var (invoiceNumberTemp, deviceStatusInv) = GetCurrentInvoiceNumber();
+                if (!invoiceNumberTemp.HasValue || !deviceStatusInv.Ok)
+                {
+                    return (receiptInfo, deviceStatusInv);
+                }
+
+                invoiceNumber = invoiceNumberTemp - 1;
             }
 
-            var result = new DeviceStatusWithInvoiceRange(getInvoiceRangeEndResult);
-            try
+            // Printing receipt's body
+            (receiptInfo, deviceStatus) = PrintReceiptBody(receipt);
+            if (!deviceStatus.Ok)
             {
-                var startSplit = startResult.Split(",");
-                result.Start = BigInteger.Parse(startSplit[1]);
-
-                var endSplit = endResult.Split(",");
-                result.End = BigInteger.Parse(endSplit[1]);
+                AbortReceipt();
+                deviceStatus.AddInfo($"Error occured while printing receipt items");
             }
-            catch (Exception)
+            
+            if (invoiceNumber.HasValue)
             {
-                result.AddInfo("Error occurred while parsing invoice range info");
-                result.AddError("E409", "Wrong format of invoice range");
+                receiptInfo.InvoiceNumber = invoiceNumber;
             }
 
-            return result;
+            return (receiptInfo, deviceStatus);
+        }
+
+        public override (string, DeviceStatus) OpenReversalReceipt(
+            ReversalReason reason,
+            string receiptNumber,
+            DateTime receiptDateTime,
+            string fiscalMemorySerialNumber,
+            string uniqueSaleNumber,
+            string operatorId,
+            string operatorPassword,
+            string invoiceNumber)
+        {
+            if (!String.IsNullOrEmpty(invoiceNumber))
+            {
+                return this.OpenCreditNoteReceipt(
+                    reason,
+                    receiptNumber,
+                    receiptDateTime,
+                    fiscalMemorySerialNumber,
+                    uniqueSaleNumber,
+                    operatorId,
+                    operatorPassword,
+                    invoiceNumber
+                );
+            }
+            
+            return base.OpenReversalReceipt(reason, receiptNumber, receiptDateTime, fiscalMemorySerialNumber, uniqueSaleNumber, operatorId, operatorPassword, invoiceNumber);
+        }
+
+        public (string, DeviceStatus) OpenCreditNoteReceipt(
+            ReversalReason reason,
+            string receiptNumber,
+            DateTime receiptDateTime,
+            string fiscalMemorySerialNumber,
+            string uniqueSaleNumber,
+            string operatorId,
+            string operatorPassword,
+            string invoiceNumber)
+        {
+            // Protocol: {ClerkNum},{Password},{UnicSaleNum}{Tab}{Credit}{InvLivk},{Reason},{DocLink},{DocLinkDT}{Tab}{FiskMem}]
+
+            var headerData = new StringBuilder()
+                .Append(
+                    String.IsNullOrEmpty(operatorId) ?
+                        Options.ValueOrDefault("Administrator.ID", "20")
+                        :
+                        operatorId
+                )
+                .Append(',')
+                .Append(
+                    String.IsNullOrEmpty(operatorPassword) ?
+                        Options.ValueOrDefault("Administrator.Password", "9999").WithMaxLength(Info.OperatorPasswordMaxLength)
+                        :
+                        operatorPassword
+                )
+                .Append(',')
+                .Append(uniqueSaleNumber)
+                .Append('\t')
+                .Append('C')
+                .Append(invoiceNumber)
+                .Append(',')
+                .Append(GetReversalReasonText(reason))
+                .Append(',')
+                .Append(receiptNumber)
+                .Append(',')
+                .Append(receiptDateTime.ToString("dd-MM-yy HH:mm:ss", CultureInfo.InvariantCulture))
+                .Append('\t')
+                .Append(fiscalMemorySerialNumber);
+
+            return Request(CommandOpenFiscalReceipt, headerData.ToString());
+        }
+
+        public override (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt)
+        {
+            var receiptInfo = new ReceiptInfo();
+            BigInteger? invoiceNumber = null;
+
+            // Abort all unfinished or erroneus receipts
+            AbortReceipt();
+
+            // Receipt header
+            var (_, deviceStatus) = OpenReversalReceipt(
+                reversalReceipt.Reason,
+                reversalReceipt.ReceiptNumber,
+                reversalReceipt.ReceiptDateTime,
+                reversalReceipt.FiscalMemorySerialNumber,
+                reversalReceipt.UniqueSaleNumber,
+                reversalReceipt.Operator,
+                reversalReceipt.OperatorPassword,
+                reversalReceipt.InvoiceNumber);
+            if (!deviceStatus.Ok)
+            {
+                AbortReceipt();
+                deviceStatus.AddInfo($"Error occured while opening new fiscal reversal receipt");
+                return (receiptInfo, deviceStatus);
+            }
+
+            if (reversalReceipt.Invoice != null)
+            {
+                var (isValid, rangeCheckResult) = InvoiceRangeCheck();
+
+                if (!rangeCheckResult.Ok || !isValid)
+                {
+                    return (receiptInfo, rangeCheckResult);
+                }
+
+                var (invoiceNumberTemp, deviceStatusInv) = GetCurrentInvoiceNumber();
+                if (!invoiceNumberTemp.HasValue || !deviceStatusInv.Ok)
+                {
+                    return (receiptInfo, deviceStatusInv);
+                }
+
+                invoiceNumber = invoiceNumberTemp - 1;
+            }
+
+            (receiptInfo, deviceStatus) = PrintReceiptBody(reversalReceipt);
+            if (!deviceStatus.Ok)
+            {
+                AbortReceipt();
+                deviceStatus.AddInfo($"Error occured while printing receipt items");
+            }
+
+            if (invoiceNumber.HasValue)
+            {
+                receiptInfo.InvoiceNumber = invoiceNumber;
+            }
+
+            return (receiptInfo, deviceStatus);
         }
 
         public override (string, DeviceStatus) GetTaxIdentificationNumber()

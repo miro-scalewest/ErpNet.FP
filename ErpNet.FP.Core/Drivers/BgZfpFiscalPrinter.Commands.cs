@@ -479,7 +479,7 @@
             var invoiceRangeResult = GetInvoiceRange();
 
             if (invoiceRangeResult.Ok && invoiceRangeResult.Start != null) {
-                return (invoiceRangeResult.Start - 1, invoiceRangeResult);
+                return (invoiceRangeResult.Start, invoiceRangeResult);
             }
 
             return (null, invoiceRangeResult);

@@ -74,9 +74,7 @@ namespace ErpNet.FP.Core.Drivers
                 deviceStatus.AddInfo("Error occurred while reading current receipt info");
                 return (null, deviceStatus);
             }
-
-            Log.Information("--------------------------");
-            Log.Information(receiptInfoResponse);
+            
             var fields = receiptInfoResponse.Split(',');
             if (fields.Length < 11)
             {

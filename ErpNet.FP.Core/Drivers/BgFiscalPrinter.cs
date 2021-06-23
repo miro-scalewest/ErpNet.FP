@@ -10,7 +10,7 @@ namespace ErpNet.FP.Core.Drivers
     /// <summary>
     /// Fiscal printer base class for Bg printers.
     /// </summary>
-    /// <seealso cref="ErpNet.FP.IFiscalPrinter" />
+    /// <seealso cref="IFiscalPrinter" />
     public abstract class BgFiscalPrinter : IFiscalPrinter
     {
 
@@ -90,7 +90,7 @@ namespace ErpNet.FP.Core.Drivers
 
         public abstract (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt);
 
-        public (bool, DeviceStatus) InvoiceRangeCheck()
+        public virtual (bool, DeviceStatus) InvoiceRangeCheck()
         {
             var range = GetInvoiceRange();
             if (!range.Ok)

@@ -53,7 +53,7 @@ namespace ErpNet.FP.Core.Drivers.BgTremol
 
                 if (model.EndsWith("V2", System.StringComparison.Ordinal))
                 {
-                    throw new InvalidDeviceInfoException($"model should NOT have a suffux 'V2'");
+                    throw new InvalidDeviceInfoException($"model should NOT have a suffix 'V2'");
                 }
             }
             var info = new DeviceInfo
