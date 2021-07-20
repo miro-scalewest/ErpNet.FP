@@ -129,7 +129,8 @@ namespace ErpNet.FP.Core.Drivers
                             item.TaxGroup,
                             item.Quantity,
                             item.PriceModifierValue,
-                            item.PriceModifierType);
+                            item.PriceModifierType,
+                            item.ItemCode);
                     }
                     catch (StandardizedStatusMessageException e)
                     {
@@ -143,7 +144,7 @@ namespace ErpNet.FP.Core.Drivers
                     (_, deviceStatus) = SubtotalChangeAmount(item.Amount);
                 }
                 else if (item.Type == ItemType.DiscountAmount)
-                {                        
+                {
                     (_, deviceStatus) = SubtotalChangeAmount(-item.Amount);
                 }
                 if (!deviceStatus.Ok)
@@ -332,7 +333,7 @@ namespace ErpNet.FP.Core.Drivers
                 {
                     return (receiptInfo, rangeCheckResult);
                 }
-                
+
                 var (invoiceNumberTemp, deviceStatusInv) = GetCurrentInvoiceNumber();
                 if (!invoiceNumberTemp.HasValue || !deviceStatusInv.Ok)
                 {
@@ -366,7 +367,7 @@ namespace ErpNet.FP.Core.Drivers
                 AbortReceipt();
                 deviceStatus.AddInfo($"Error occured while printing receipt items");
             }
-            
+
             if (invoiceNumber.HasValue)
             {
                 receiptInfo.InvoiceNumber = invoiceNumber;

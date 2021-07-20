@@ -272,7 +272,8 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             TaxGroup taxGroup,
             decimal quantity = 0m,
             decimal priceModifierValue = 0m,
-            PriceModifierType priceModifierType = PriceModifierType.None)
+            PriceModifierType priceModifierType = PriceModifierType.None,
+            int ItemCode = 999)
         {
             string PriceModifierTypeToProtocolValue()
             {

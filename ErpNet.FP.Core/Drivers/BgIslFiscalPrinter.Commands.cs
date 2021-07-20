@@ -74,7 +74,7 @@ namespace ErpNet.FP.Core.Drivers
                 deviceStatus.AddInfo("Error occurred while reading current receipt info");
                 return (null, deviceStatus);
             }
-            
+
             var fields = receiptInfoResponse.Split(',');
             if (fields.Length < 11)
             {
@@ -282,7 +282,7 @@ namespace ErpNet.FP.Core.Drivers
         {
             return Request(CommandOpenNonFiscalReceipt);
         }
-        
+
         public virtual (string, DeviceStatus) PrintNonFiscalReceiptText(
             string text,
             bool bold = false,
@@ -309,7 +309,8 @@ namespace ErpNet.FP.Core.Drivers
             TaxGroup taxGroup,
             decimal quantity = 0,
             decimal priceModifierValue = 0,
-            PriceModifierType priceModifierType = PriceModifierType.None)
+            PriceModifierType priceModifierType = PriceModifierType.None,
+            int ItemCode = 999)
         {
             var itemData = new StringBuilder();
             if (department <= 0) {
@@ -359,7 +360,7 @@ namespace ErpNet.FP.Core.Drivers
         public virtual (string, DeviceStatus) SetInvoice(Invoice invoice)
         {
             string uid = "";
-            
+
             switch (invoice.Type)
             {
                 case UIDType.PersonalID:
@@ -374,7 +375,7 @@ namespace ErpNet.FP.Core.Drivers
             }
 
             uid += invoice.UID;
-            
+
             var clientData = (new StringBuilder())
                 .Append(uid)
                 .Append('\t')

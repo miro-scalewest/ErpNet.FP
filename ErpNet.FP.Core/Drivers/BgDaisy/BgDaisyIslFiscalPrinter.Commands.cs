@@ -1,4 +1,4 @@
-﻿namespace ErpNet.FP.Core.Drivers.BgDaisy
+namespace ErpNet.FP.Core.Drivers.BgDaisy
 {
     using System;
     using System.Collections.Generic;
@@ -28,7 +28,8 @@
             TaxGroup taxGroup,
             decimal quantity = 0,
             decimal priceModifierValue = 0,
-            PriceModifierType priceModifierType = PriceModifierType.None)
+            PriceModifierType priceModifierType = PriceModifierType.None,
+            int ItemCode = 999)
         {
             if (department <= 0) 
             {
@@ -142,7 +143,7 @@
             return setInvoiceRangeEndResult;
         }
 
-        public override (bool, DeviceStatus) InvoiceRangeCheck() 
+        public override (bool, DeviceStatus) InvoiceRangeCheck()
         {
             // Currently won't support any daisy range retrieval
             var status = new DeviceStatus();
@@ -180,7 +181,7 @@
                 {
                     return (receiptInfo, rangeCheckResult);
                 }
-                
+
                 var (invoiceNumberTemp, deviceStatusInv) = GetCurrentInvoiceNumber();
                 if (!invoiceNumberTemp.HasValue || !deviceStatusInv.Ok)
                 {
@@ -197,7 +198,7 @@
                 AbortReceipt();
                 deviceStatus.AddInfo($"Error occured while printing receipt items");
             }
-            
+
             if (invoiceNumber.HasValue)
             {
                 receiptInfo.InvoiceNumber = invoiceNumber;
@@ -229,7 +230,7 @@
                     invoiceNumber
                 );
             }
-            
+
             return base.OpenReversalReceipt(reason, receiptNumber, receiptDateTime, fiscalMemorySerialNumber, uniqueSaleNumber, operatorId, operatorPassword, invoiceNumber);
         }
 

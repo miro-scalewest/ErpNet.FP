@@ -1,4 +1,4 @@
-﻿namespace ErpNet.FP.Core.Drivers.BgDatecs
+namespace ErpNet.FP.Core.Drivers.BgDatecs
 {
     using System;
     using System.Collections.Generic;
@@ -55,7 +55,8 @@
             TaxGroup taxGroup,
             decimal quantity = 0,
             decimal priceModifierValue = 0,
-            PriceModifierType priceModifierType = PriceModifierType.None)
+            PriceModifierType priceModifierType = PriceModifierType.None,
+            int ItemCode = 999)
         // Protocol [<L1>][<Lf><L2>]<Tab><TaxCd><[Sign]Price>[*<Qwan>][,Perc|;Abs]
         {
             var itemData = new StringBuilder();
