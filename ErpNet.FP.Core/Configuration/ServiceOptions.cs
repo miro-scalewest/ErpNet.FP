@@ -27,6 +27,7 @@
     {
         
         public bool AutoDetect { get; set; } = true;
+        public bool UseCachedPrinters { get; set; } = true;
         public string ServerId { get; set; } = string.Empty;
         public Dictionary<string, PrinterConfig> Printers { get; set; } = new Dictionary<string, PrinterConfig>();
         public int UdpBeaconPort { get; set; } = 8001;

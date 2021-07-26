@@ -19,6 +19,8 @@
 
         Dictionary<string, PrinterProperties> PrintersProperties { get; set; }
 
+        CachedPrinterConfigService cachedPrinterConfigService { get; set; }
+
         Task<object?> RunAsync(PrintJob printJob);
 
         TaskInfoResult GetTaskInfo(string taskId);
@@ -32,6 +34,8 @@
         bool AutoDetect { get; set; }
 
         int UdpBeaconPort { get; set; }
+
+        bool UseCachedPrinters { get; }
 
         bool ConfigurePrinter(PrinterConfigWithId printerConfigWithId);
 
@@ -51,6 +55,7 @@
         public Provider.Provider Provider { get; protected set; }
         public Dictionary<string, DeviceInfo> PrintersInfo { get; } = new Dictionary<string, DeviceInfo>();
         public Dictionary<string, IFiscalPrinter> Printers { get; } = new Dictionary<string, IFiscalPrinter>();
+        public CachedPrinterConfigService cachedPrinterConfigService { get; set; }
         public Dictionary<string, PrinterConfig> ConfiguredPrinters
         {
             get => configOptions.Printers;
@@ -80,6 +85,11 @@
             }
         }
 
+        public bool UseCachedPrinters
+        {
+            get => configOptions.UseCachedPrinters;
+        }
+
         public int UdpBeaconPort
         {
             get => configOptions.UdpBeaconPort;
@@ -103,8 +113,23 @@
         {
             ReadOptions();
             SetupProvider();
+            cachedPrinterConfigService = new CachedPrinterConfigService();
             isReady = true;
-            Task.Run(() => Detect());
+
+            if (UseCachedPrinters && cachedPrinterConfigService.Printers.Count > 0)
+            {
+                Log.Information("Using cached printer configuration.. Initial detect is bypassed...");
+                // TODO: load cached printers
+            }
+            else
+            {
+                if (UseCachedPrinters)
+                {
+                    Log.Information("Cached printers is on, but no printers are cached. Starting detect...");
+                }
+
+                Task.Run(() => Detect());
+            }
         }
 
         protected virtual void ReadOptions()
@@ -189,6 +214,7 @@
 
                         Log.Information($"Detecting done. Found {Printers.Count} available printer(s).");
 
+                        cachedPrinterConfigService.write(Printers);
                     }
                     finally
                     {

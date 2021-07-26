@@ -66,10 +66,11 @@
         public class Channel : IChannel
         {
             internal /*readonly*/ SerialPort? serialPort;    // can be disposed and created multiple times
-            private string portName;       
-            private int baudRate;
+            public string portName;
+            public int baudRate;
             protected Timer idleTimer;
             protected const int MinimalBaudRate = 9600;
+            public string TransportName => (new ComTransport()).TransportName;
 
             public string Descriptor
             {

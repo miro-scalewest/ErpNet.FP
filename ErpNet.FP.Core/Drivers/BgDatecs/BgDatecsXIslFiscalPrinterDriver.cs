@@ -17,6 +17,7 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             IDictionary<string, string>? options = null)
         {
             var fiscalPrinter = new BgDatecsXIslFiscalPrinter(channel, serviceOptions, options);
+            fiscalPrinter.DriverName = DriverName;
             var rawDeviceInfoCacheKey = $"x.isl.{channel.Descriptor}";
             var rawDeviceInfo = Cache.Get(rawDeviceInfoCacheKey);
             if (rawDeviceInfo == null)

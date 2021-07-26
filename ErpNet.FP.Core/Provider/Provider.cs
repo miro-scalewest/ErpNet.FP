@@ -5,10 +5,10 @@ namespace ErpNet.FP.Core.Provider
     using System.Collections.Generic;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
-    using ErpNet.FP.Core.Configuration;
-    using ErpNet.FP.Core.Drivers;
+    using Configuration;
+    using Drivers;
     using Serilog;
-    using static ErpNet.FP.Core.Transports.ComTransport;
+    using static Transports.ComTransport;
 
     /// <summary>
     /// General functions for finding and connecting fiscal printers.

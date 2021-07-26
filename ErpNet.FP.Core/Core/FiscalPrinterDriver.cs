@@ -2,8 +2,8 @@
 namespace ErpNet.FP.Core
 {
     using System.Collections.Generic;
-    using ErpNet.FP.Core.Configuration;
-    using ErpNet.FP.Core.Helpers;
+    using Configuration;
+    using Helpers;
 
     /// <summary>
     /// Represents a driver for a fiscal printer
