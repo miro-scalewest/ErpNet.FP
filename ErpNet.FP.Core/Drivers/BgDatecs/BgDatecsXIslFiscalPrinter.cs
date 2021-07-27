@@ -1,7 +1,7 @@
 ﻿namespace ErpNet.FP.Core.Drivers.BgDatecs
 {
     using System.Collections.Generic;
-    using ErpNet.FP.Core.Configuration;
+    using Configuration;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation of Datecs Bulgaria.
@@ -9,6 +9,8 @@
     /// <seealso cref="ErpNet.FP.Drivers.BgIslFiscalPrinter" />
     public partial class BgDatecsXIslFiscalPrinter : BgIslFiscalPrinter
     {
+        public override string driverName { get; } = "bg.dt.x.isl";
+
         public BgDatecsXIslFiscalPrinter(
             IChannel channel, 
             ServiceOptions serviceOptions, 

@@ -7,6 +7,7 @@ namespace ErpNet.FP.Core.Drivers
     using System.Text;
     using System.Text.RegularExpressions;
     using Configuration;
+    using Serilog;
     using Service;
 
     /// <summary>
@@ -18,7 +19,7 @@ namespace ErpNet.FP.Core.Drivers
 
         protected static readonly object frameSyncLock = new object();
 
-        public string DriverName { get; set; }
+        public abstract string driverName { get; }
 
         protected Encoding PrinterEncoding = CodePagesEncodingProvider.Instance.GetEncoding(1251);
 
@@ -38,7 +39,7 @@ namespace ErpNet.FP.Core.Drivers
             Channel = channel;
         }
 
-        public static BgFiscalPrinter BuildFromCache(
+        public static BgFiscalPrinter? BuildFromCache(
             string driverName,
             DeviceInfo info,
             IChannel channel,
@@ -48,7 +49,15 @@ namespace ErpNet.FP.Core.Drivers
         {
             var fiscalPrinter = ReflectiveEnumerator
                 .GetEnumerableOfType<BgFiscalPrinter>(channel, serviceOptions, options)
-                .First(driver => driver.DriverName.Equals(driverName));
+                .FirstOrDefault(driver => driverName == driver.driverName)
+                ;
+
+            if (fiscalPrinter == null)
+            {
+                Log.Error($"Not found fiscal printer with driver name {driverName}");
+                return null;
+            }
+            
             fiscalPrinter.Info = info;
             serviceOptions.ReconfigurePrinterConstants(fiscalPrinter.Info);
             return fiscalPrinter;

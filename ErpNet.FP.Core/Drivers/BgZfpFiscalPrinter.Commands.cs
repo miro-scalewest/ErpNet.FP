@@ -5,7 +5,7 @@
     using System.Numerics;
     using System.Text;
 
-    public partial class BgZfpFiscalPrinter : BgFiscalPrinter
+    public abstract partial class BgZfpFiscalPrinter : BgFiscalPrinter
     {
         protected const byte
             CommandReadFDNumbers = 0x60,

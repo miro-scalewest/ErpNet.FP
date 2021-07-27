@@ -19,7 +19,7 @@ namespace ErpNet.FP.Core
         /// <summary>
         /// Saving driver name for state cache use
         /// </summary>
-        string DriverName { get; }
+        string driverName { get; }
 
         public ServiceOptions ServiceOptions { get; }
 

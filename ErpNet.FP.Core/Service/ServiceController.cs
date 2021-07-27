@@ -119,7 +119,11 @@
             if (UseCachedPrinters && cachedPrinterConfigService.Printers.Count > 0)
             {
                 Log.Information("Using cached printer configuration.. Initial detect is bypassed...");
-                // TODO: load cached printers
+
+                foreach (var printerPair in cachedPrinterConfigService.Printers)
+                {
+                    AddPrinter(printerPair.Value);
+                }
             }
             else
             {
@@ -214,7 +218,7 @@
 
                         Log.Information($"Detecting done. Found {Printers.Count} available printer(s).");
 
-                        cachedPrinterConfigService.write(Printers);
+                        cachedPrinterConfigService.Write(Printers);
                     }
                     finally
                     {

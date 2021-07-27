@@ -12,17 +12,17 @@ namespace ErpNet.FP.Core.Service
 
     public class CachedPrinterConfigService
     {
-        public Dictionary<string, BgFiscalPrinter> Printers { get; set; } = new Dictionary<string, BgFiscalPrinter>();
+        public Dictionary<string, BgFiscalPrinter> Printers { get; private set; } = new Dictionary<string, BgFiscalPrinter>();
 
         private readonly string cacheFileLocation;
 
         public CachedPrinterConfigService(string cacheFileLocation = "cached_printers.json")
         {
             this.cacheFileLocation = cacheFileLocation;
-            this.load();
+            this.Load();
         }
 
-        private void load()
+        private void Load()
         {
             if (!File.Exists(this.cacheFileLocation))
             {
@@ -36,52 +36,67 @@ namespace ErpNet.FP.Core.Service
 
                 foreach (KeyValuePair<string, PrinterInitInfo> pair in result)
                 {
-                    var transport = ReflectiveEnumerator
-                        .GetEnumerableOfType<Transport>()
-                        .First(t => t.TransportName.Equals(pair.Value.transport))
-                    ;
-
-                    IChannel channel = null;
-                    switch (pair.Value.transport)
+                    try
                     {
-                        case "com":
-                            channel = new ComTransport.Channel(
-                                pair.Value.transportsInfo.portName,
-                                pair.Value.transportsInfo.baudRate.Value
-                            );
-                            break;
-                        case "tcp":
-                            channel = new ComTransport.Channel(
-                                pair.Value.transportsInfo.tcpHostName,
-                                pair.Value.transportsInfo.tcpPort.Value
-                            );
-                            break;
-                        default:
-                            Log.Error($"Cached transport {pair.Value.transport} not found.");
-                            break;
-                    }
+                        var transport = ReflectiveEnumerator
+                                .GetEnumerableOfType<Transport>()
+                                .First(t => t.TransportName.Equals(pair.Value.transport))
+                            ;
 
-                    if (channel == null)
+                        IChannel channel = null;
+                        switch (pair.Value.transport)
+                        {
+                            case "com":
+                                channel = new ComTransport.Channel(
+                                    pair.Value.transportsInfo.portName,
+                                    (int)pair.Value.transportsInfo.baudRate.Value
+                                );
+                                break;
+                            case "tcp":
+                                channel = new ComTransport.Channel(
+                                    pair.Value.transportsInfo.tcpHostName,
+                                    (int)pair.Value.transportsInfo.tcpPort.Value
+                                );
+                                break;
+                            default:
+                                Log.Error($"Cached transport {pair.Value.transport} not found.");
+                                break;
+                        }
+
+                        if (channel == null)
+                        {
+                            break;
+                        }
+
+                        var instance = BgFiscalPrinter.BuildFromCache(
+                            pair.Value.driverName,
+                            pair.Value.info,
+                            channel,
+                            pair.Value.serviceOptions,
+                            pair.Value.options
+                        );
+
+                        if (instance != null)
+                        {
+                            rebuiltPrinters.Add(pair.Key, instance);
+                            Log.Information($"Successfully loaded {instance.DeviceInfo.SerialNumber} with driver {instance.driverName}");
+                        }
+                        else
+                        {
+                            Log.Error($"Couldn't load {pair.Key}");
+                        }
+                    }
+                    catch (Exception e)
                     {
-                        break;
+                        Log.Error($"Couldn't load element ({pair.Key}) from cache: {e.Message}");
                     }
-
-                    var instance = BgFiscalPrinter.BuildFromCache(
-                         pair.Value.driverName,
-                         pair.Value.info,
-                         channel,
-                         pair.Value.serviceOptions,
-                         pair.Value.options
-                    );
-
-                    rebuiltPrinters.Add(pair.Key, instance);
                 }
 
                 Printers = rebuiltPrinters;
             }
         }
 
-        public void write(Dictionary<string, IFiscalPrinter> newPrinters)
+        public void Write(Dictionary<string, IFiscalPrinter> newPrinters)
         {
             try
             {
@@ -90,7 +105,7 @@ namespace ErpNet.FP.Core.Service
                 {
                     newStruct.Add(pair.Key, new PrinterInitInfo(
                         pair.Value.DeviceInfo,
-                        pair.Value.DriverName,
+                        pair.Value.driverName,
                         pair.Value.Channel.TransportName,
                         (
                             pair.Value.Channel.TransportName.Equals("tcp")
@@ -110,8 +125,8 @@ namespace ErpNet.FP.Core.Service
                 }
                 File.WriteAllText(this.cacheFileLocation,
                     JsonConvert.SerializeObject(newStruct, Formatting.Indented));
-                Log.Information($"Saved {newStruct.Count} printers to {this.cacheFileLocation}");
-                this.load();
+                Log.Information($"Saved {newStruct.Count} printer(s) to {this.cacheFileLocation}");
+                this.Load();
             }
             catch (Exception e)
             {
