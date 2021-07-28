@@ -35,7 +35,7 @@
 
         int UdpBeaconPort { get; set; }
 
-        bool UseCachedPrinters { get; }
+        bool UseCachedPrinters { get; set; }
 
         bool ConfigurePrinter(PrinterConfigWithId printerConfigWithId);
 
@@ -88,6 +88,12 @@
         public bool UseCachedPrinters
         {
             get => configOptions.UseCachedPrinters;
+
+            set
+            {
+                configOptions.UseCachedPrinters = value;
+                WriteOptions();
+            }
         }
 
         public int UdpBeaconPort

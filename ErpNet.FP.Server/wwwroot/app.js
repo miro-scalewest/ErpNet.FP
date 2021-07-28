@@ -162,10 +162,31 @@ function autoDetectChanged() {
             $("#Version").html('ver.' + data.version)
             $("#ServerId").html('Server Id: ' + data.serverId)
             $("#AutoDetect").attr('checked', data.autoDetect ? 'checked' : null)
+            $("#UseCachedPrinters").attr('checked', data.useCachedPrinters ? 'checked' : null)
             showToastMessage("Auto detect is " + (data.autoDetect ? 'turned ON' : 'turned OFF'))
         },
         error: function (xhr, type) {
             showToastMessage("Cannot change auto detect mode.")
+        }
+    })
+}
+
+function useCachedPrintersChanged() {
+    $.ajax({
+        type: 'GET',
+        url: '/service/togglecaching',
+        data: {},
+        dataType: 'json',
+        timeout: 0,
+        success: function (data) {
+            $("#Version").html('ver.' + data.version)
+            $("#ServerId").html('Server Id: ' + data.serverId)
+            $("#AutoDetect").attr('checked', data.autoDetect ? 'checked' : null)
+            $("#UseCachedPrinters").attr('checked', data.useCachedPrinters ? 'checked' : null)
+            showToastMessage("Caching is " + (data.useCachedPrinters ? 'turned ON' : 'turned OFF'))
+        },
+        error: function (xhr, type) {
+            showToastMessage("Cannot change caching mode.")
         }
     })
 }
@@ -215,6 +236,7 @@ function getServerVariables() {
             $("#Version").html('ver.' + data.version)
             $("#ServerId").html('Server Id: ' + data.serverId)
             $("#AutoDetect").attr('checked', data.autoDetect ? 'checked' : null)
+            $("#UseCachedPrinters").attr('checked', data.useCachedPrinters ? 'checked' : null)
         },
         error: function (xhr, type) {
             showToastMessage("Cannot get server variables.")

@@ -47,6 +47,15 @@
             return serverVariables;
         }
 
+        // GET togglecaching
+        [HttpGet("togglecaching")]
+        public ActionResult<ServerVariables> ToggleCaching()
+        {
+            context.UseCachedPrinters = !context.UseCachedPrinters;
+            serverVariables.UseCachedPrinters = context.UseCachedPrinters;
+            return serverVariables;
+        }
+
         // GET detect
         [HttpGet("detect")]
         public ActionResult Detect()
