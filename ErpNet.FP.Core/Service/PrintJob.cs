@@ -1,6 +1,7 @@
 namespace ErpNet.FP.Core.Service
 {
     using System;
+    using Serilog;
 
     public enum PrintJobAction
     {
@@ -90,6 +91,11 @@ namespace ErpNet.FP.Core.Service
                             {
                                 var (info, status) = Printer.PrintReceipt(receipt);
                                 Result = new DeviceStatusWithReceiptInfo(status, info);
+                                if (status.Ok && receipt.PrintDuplicate)
+                                {
+                                    var duplicateResult = Printer.PrintDuplicate(receipt);
+                                    Log.Information("Duplicate " + (duplicateResult.Ok ? "printed" : "failed"));
+                                }
                             }
                             else
                             {
