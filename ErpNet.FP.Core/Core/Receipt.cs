@@ -1,5 +1,6 @@
 namespace ErpNet.FP.Core
 {
+    using System;
     using System.Collections.Generic;
     using Newtonsoft.Json;
 
@@ -90,5 +91,11 @@ namespace ErpNet.FP.Core
         /// The total amount should match the total amount of the line items.
         /// </summary>
         public IList<Payment>? Payments { get; set; }
+
+        /// <summary>
+        /// Print duplicate immediately
+        /// </summary>
+        [JsonProperty()]
+        public Boolean PrintDuplicate { get; set; }
     }
 }
