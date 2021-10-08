@@ -14,8 +14,9 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
     {
         protected const byte
            DatecsXCommandOpenStornoDocument = 0x2b,
-           CommandGetInvoiceRange = 0x42,
-           CommandSetInvoiceRange = 0x42;
+           CommandGetInvoiceRange = 0x67,
+           CommandSetInvoiceRange = 0x42,
+           Programming = 0xff;
 
         public override IDictionary<PaymentType, string> GetPaymentTypeMappings()
         {
@@ -100,32 +101,25 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
 
         public override (BigInteger?, DeviceStatus) GetCurrentInvoiceNumber()
         {
-            var (receiptInfoResponse, deviceStatus) = Request(CommandGetReceiptInfo);
+            var (currentNumber, deviceStatus) = Request(Programming, "nInvoice\t\t\t");
+
             if (!deviceStatus.Ok)
             {
-                deviceStatus.AddInfo("Error occurred while reading current receipt info");
-                return (null, deviceStatus);
-            }
-
-            var fields = receiptInfoResponse.Split('\t');
-            if (fields.Length < 12)
-            {
-                deviceStatus.AddInfo($"Error occured while parsing current receipt info");
-                deviceStatus.AddError("E409", "Wrong format of receipt status");
+                deviceStatus.AddError("E499", "An error occurred while reading invoice range");
                 return (null, deviceStatus);
             }
 
             try
-            {
-                return (BigInteger.Parse(fields[10]) - 1, deviceStatus);
+            { 
+                return (BigInteger.Parse(currentNumber.Split("\t")[1]), deviceStatus);
             }
             catch (Exception e)
             {
-                deviceStatus = new DeviceStatus();
-                deviceStatus.AddInfo($"Error occured while parsing the current invoice number");
+                deviceStatus.AddInfo($"Error occured while parsing the invoice range");
                 deviceStatus.AddError("E409", e.Message);
-                return (null, deviceStatus);
             }
+
+            return (null, deviceStatus);
         }
 
         public override DeviceStatus SetInvoiceRange(InvoiceRange invoiceRange)
@@ -141,10 +135,12 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
 
         public override DeviceStatusWithInvoiceRange GetInvoiceRange()
         {
-            var (data, output) = Request(CommandGetInvoiceRange);
-            var result = new DeviceStatusWithInvoiceRange(output);
+            var (startNumber, startNumberOutput) = Request(Programming, "InvoiceRangeBeg\t\t\t");
+            var (endNumber, endNumberOutput) = Request(Programming, "InvoiceRangeEnd\t\t\t");
+            var (currentNumber, currentNumberOutput) = Request(Programming, "nInvoice\t\t\t");
+            var result = new DeviceStatusWithInvoiceRange(startNumberOutput);
 
-            if (!output.Ok)
+            if (!startNumberOutput.Ok || !endNumberOutput.Ok)
             {
                 result.AddError("E499", "An error occurred while reading invoice range");
                 return result;
@@ -152,9 +148,12 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
 
             try
             {
-                var split = data.Split("\t");
-                result.Start = BigInteger.Parse(split[1]);
-                result.End = BigInteger.Parse(split[2]);
+                result.Start = BigInteger.Parse(startNumber.Split("\t")[1]);
+                result.End = BigInteger.Parse(endNumber.Split("\t")[1]);
+                if (currentNumberOutput.Ok && currentNumber.Split("\t")[0] == "0")
+                {
+                    result.Current = BigInteger.Parse(currentNumber.Split("\t")[1]);
+                }
             }
             catch (Exception e)
             {
@@ -311,12 +310,19 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
 
         public override (string, DeviceStatus) SetInvoice(Invoice invoice)
         {
+            var address = invoice.ClientAddress.Length > 36
+                    ? new string[]
+                    {
+                        invoice.ClientAddress.Substring(0, 36),
+                        invoice.ClientAddress.Substring(36).WithMaxLength(36)
+                    }
+                    : new string[] {invoice.ClientAddress, ""};
             var clientData = string.Join("\t",
-                invoice.SellerName,
-                invoice.ReceiverName,
-                invoice.BuyerName,
-                invoice.ClientAddress,
-                "",
+                invoice.SellerName.WithMaxLength(36),
+                invoice.ReceiverName.WithMaxLength(36),
+                invoice.BuyerName.WithMaxLength(36),
+                address[0],
+                address[1],
                 ((int)invoice.Type).ToString(),
                 invoice.UID,
                 invoice.VatNumber,

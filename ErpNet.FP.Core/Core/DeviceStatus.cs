@@ -127,6 +127,7 @@
     {
         public BigInteger? Start { get; set; }
         public BigInteger? End { get; set; }
+        public BigInteger? Current { get; set; }
 
         public DeviceStatusWithInvoiceRange(DeviceStatus status) : base()
         {

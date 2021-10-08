@@ -485,7 +485,7 @@ namespace ErpNet.FP.Server.Controllers
         }
 
         // GET {id}/invoiceRange
-        [HttpGet("{id}/invoiceRange")]
+        [HttpGet("{id}/invoicerange")]
         public async Task<IActionResult> GetInvoiceRange(
             string id,
             [FromQuery] string? taskId,
