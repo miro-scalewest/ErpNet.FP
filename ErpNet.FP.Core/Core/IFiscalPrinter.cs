@@ -2,6 +2,9 @@
 
 namespace ErpNet.FP.Core
 {
+    using System.Collections.Generic;
+    using Configuration;
+
     /// <summary>
     /// Represents the capabilities of a connected fiscal printer.
     /// </summary>
@@ -12,6 +15,17 @@ namespace ErpNet.FP.Core
         /// </summary>
         /// <returns>Device information.</returns>
         DeviceInfo DeviceInfo { get; }
+
+        /// <summary>
+        /// Saving driver name for state cache use
+        /// </summary>
+        string driverName { get; }
+
+        public ServiceOptions ServiceOptions { get; }
+
+        public IDictionary<string, string> Options { get; }
+
+        public IChannel Channel { get; }
 
         /// <summary>
         /// Checks whether the device is currently ready to accept commands.

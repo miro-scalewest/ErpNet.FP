@@ -9,7 +9,7 @@
     /// Fiscal printer using the Icp implementation of Isl Bulgaria.
     /// </summary>
     /// <seealso cref="ErpNet.FP.Drivers.BgIcpFiscalPrinter" />
-    public partial class BgIcpFiscalPrinter : BgFiscalPrinter
+    public abstract partial class BgIcpFiscalPrinter : BgFiscalPrinter
     {
         public BgIcpFiscalPrinter(
             IChannel channel, 

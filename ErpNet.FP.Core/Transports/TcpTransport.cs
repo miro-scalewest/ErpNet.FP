@@ -63,9 +63,10 @@
         {
             private readonly TcpClient tcpClient;
             private NetworkStream netStream;
+            public string TransportName => (new TcpTransport()).TransportName;
 
-            private string HostName { get; }
-            private int Port { get; }
+            public string HostName { get; }
+            public int Port { get; }
 
             public string Descriptor => $"{HostName}:{Port}";
 

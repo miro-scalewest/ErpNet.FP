@@ -81,6 +81,7 @@
             writableConfigOptions.Update(updatedConfigOptions =>
             {
                 updatedConfigOptions.AutoDetect = configOptions.AutoDetect;
+                updatedConfigOptions.UseCachedPrinters = configOptions.UseCachedPrinters;
                 updatedConfigOptions.ServerId = configOptions.ServerId;
                 updatedConfigOptions.Printers = configOptions.Printers ?? new Dictionary<string, PrinterConfig>();
                 updatedConfigOptions.PrintersProperties = configOptions.PrintersProperties ?? new Dictionary<string, PrinterProperties> { };

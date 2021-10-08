@@ -60,7 +60,7 @@
 
             if (!File.Exists(appSettingsJsonFilePath))
             {
-                var defaultAppSettings = @"{ ""ErpNet.FP"": {""AutoDetect"": true, ""Printers"": { } }, ""Kestrel"": { ""EndPoints"": { ""Http"": { ""Url"": ""http://0.0.0.0:8001"" } } } }";
+                var defaultAppSettings = @"{ ""ErpNet.FP"": {""AutoDetect"": true, ""UseCachedPrinters"": true, ""Printers"": { } }, ""Kestrel"": { ""EndPoints"": { ""Http"": { ""Url"": ""http://0.0.0.0:8001"" } } } }";
                 File.WriteAllText(appSettingsJsonFilePath, defaultAppSettings);
             }
         }

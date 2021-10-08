@@ -10,7 +10,7 @@
     /// Fiscal printer using the Icp implementation of ISL Ltd.
     /// </summary>
     /// <seealso cref="ErpNet.FP.Drivers.BgIcpFiscalPrinter" />
-    public partial class BgIcpFiscalPrinter : BgFiscalPrinter
+    public abstract partial class BgIcpFiscalPrinter : BgFiscalPrinter
     {
         public byte[]? DeviceNo = null;
 

@@ -4,7 +4,6 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
     using System.Collections.Generic;
     using System.Globalization;
     using System.Numerics;
-    using Serilog;
 
     /// <summary>
     /// Fiscal printer using the ISL implementation of Datecs Bulgaria.

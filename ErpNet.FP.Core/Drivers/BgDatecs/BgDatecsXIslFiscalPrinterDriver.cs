@@ -3,7 +3,7 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
 {
     using System;
     using System.Collections.Generic;
-    using ErpNet.FP.Core.Configuration;
+    using Configuration;
 
     public class BgDatecsXIslFiscalPrinterDriver : FiscalPrinterDriver
     {

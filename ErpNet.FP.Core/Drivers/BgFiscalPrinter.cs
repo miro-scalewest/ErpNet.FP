@@ -3,9 +3,12 @@ namespace ErpNet.FP.Core.Drivers
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Linq;
     using System.Text;
     using System.Text.RegularExpressions;
     using Configuration;
+    using Serilog;
+    using Service;
 
     /// <summary>
     /// Fiscal printer base class for Bg printers.
@@ -15,6 +18,8 @@ namespace ErpNet.FP.Core.Drivers
     {
 
         protected static readonly object frameSyncLock = new object();
+
+        public abstract string driverName { get; }
 
         protected Encoding PrinterEncoding = CodePagesEncodingProvider.Instance.GetEncoding(1251);
 
@@ -30,14 +35,39 @@ namespace ErpNet.FP.Core.Drivers
             ServiceOptions = serviceOptions;
             Options = new Dictionary<string, string>()
                 .MergeWith(GetDefaultOptions())
-                .MergeWith(options);            
+                .MergeWith(options);
             Channel = channel;
+        }
+
+        public static BgFiscalPrinter? BuildFromCache(
+            string driverName,
+            DeviceInfo info,
+            IChannel channel,
+            ServiceOptions serviceOptions,
+            IDictionary<string, string>? options = null
+        )
+        {
+            var fiscalPrinter = ReflectiveEnumerator
+                .GetEnumerableOfType<BgFiscalPrinter>(channel, serviceOptions, options)
+                .FirstOrDefault(driver => driverName == driver.driverName)
+                ;
+
+            if (fiscalPrinter == null)
+            {
+                Log.Error($"Not found fiscal printer with driver name {driverName}");
+                return null;
+            }
+            
+            fiscalPrinter.Info = info;
+            fiscalPrinter.Info.SupportedPaymentTypes = fiscalPrinter.GetSupportedPaymentTypes();
+            serviceOptions.ReconfigurePrinterConstants(fiscalPrinter.Info);
+            return fiscalPrinter;
         }
 
         protected abstract DeviceStatus ParseStatus(byte[]? status);
 
-        protected IChannel Channel { get; }
-        protected IDictionary<string, string> Options { get; }
+        public IChannel Channel { get; }
+        public IDictionary<string, string> Options { get; }
         public ServiceOptions ServiceOptions { get; }
 
         public abstract DeviceStatusWithCashAmount Cash(Credentials credentials);

@@ -9,6 +9,8 @@
     /// <seealso cref="ErpNet.FP.Drivers.BgIslFiscalPrinter" />
     public partial class BgIncotexIslFiscalPrinter : BgIslFiscalPrinter
     {
+        public override string driverName { get; } = "bg.in.isl";
+
         public BgIncotexIslFiscalPrinter(
             IChannel channel, 
             ServiceOptions serviceOptions, 

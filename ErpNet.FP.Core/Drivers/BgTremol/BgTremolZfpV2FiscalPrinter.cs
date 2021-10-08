@@ -9,6 +9,8 @@
     /// <seealso cref="ErpNet.FP.Drivers.BgTremolZfpV2FiscalPrinter" />
     public partial class BgTremolZfpV2FiscalPrinter : BgZfpFiscalPrinter
     {
+        public override string driverName { get; } = "bg.zk.v2.zfp";
+
         public BgTremolZfpV2FiscalPrinter(
             IChannel channel, 
             ServiceOptions serviceOptions, 
