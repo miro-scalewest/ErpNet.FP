@@ -335,7 +335,8 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             }
 
             // Protocol: [<Tab><Font>[<Flags>],]<Text>
-            var headerData = string.Join("\t",
+            var headerData = string.Join("",
+                "\t",
                 height == LineHeight.OneLine ? 1 : 2,
                 flags,
                 text.WithMaxLength(Info.CommentTextMaxLength)
