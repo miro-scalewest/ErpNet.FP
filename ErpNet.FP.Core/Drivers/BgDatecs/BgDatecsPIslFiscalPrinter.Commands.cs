@@ -329,6 +329,11 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                 flags += "B";
             }
 
+            if (height == LineHeight.TwoLines)
+            {
+                flags += "H";
+            }
+
             if (italic)
             {
                 flags += "I";
@@ -337,8 +342,9 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             // Protocol: [<Tab><Font>[<Flags>],]<Text>
             var headerData = string.Join("",
                 "\t",
-                height == LineHeight.OneLine ? 1 : 2,
+                height == LineHeight.OneLine ? 1 : 0,
                 flags,
+                ",",
                 text.WithMaxLength(Info.CommentTextMaxLength)
             );
 
