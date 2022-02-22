@@ -165,7 +165,11 @@ function applyChanges(serialNumber) {
         if (v) {
             printerProperties[serialNumber].paymentTypeMappings[paymentType] = v
         } else {
-            delete printerProperties[serialNumber].paymentTypeMappings[paymentType];
+            try {
+                delete printerProperties[serialNumber].paymentTypeMappings[paymentType];
+            } catch (e) {
+                console.log(`Can't delete payment type ${paymentType} from #${serialNumber}`);
+            }
         }
     }
     for (var pci in availablePrinterConstantsNames) {
