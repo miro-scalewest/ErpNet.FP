@@ -164,6 +164,8 @@ function applyChanges(serialNumber) {
         var v = input.val()
         if (v) {
             printerProperties[serialNumber].paymentTypeMappings[paymentType] = v
+        } else {
+            delete printerProperties[serialNumber].paymentTypeMappings[paymentType];
         }
     }
     for (var pci in availablePrinterConstantsNames) {
