@@ -119,7 +119,7 @@
         {
             ReadOptions();
             SetupProvider();
-            cachedPrinterConfigService = new CachedPrinterConfigService();
+            cachedPrinterConfigService = new CachedPrinterConfigService(this.configOptions);
             isReady = true;
 
             if (UseCachedPrinters && cachedPrinterConfigService.Printers.Count > 0)
@@ -130,6 +130,8 @@
                 {
                     AddPrinter(printerPair.Value);
                 }
+
+                WriteOptions();
             }
             else
             {

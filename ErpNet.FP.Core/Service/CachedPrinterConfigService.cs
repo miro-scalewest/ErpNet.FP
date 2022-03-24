@@ -16,8 +16,9 @@ namespace ErpNet.FP.Core.Service
 
         private readonly string cacheFileLocation;
 
-        public CachedPrinterConfigService(string cacheFileLocation = "cached_printers.json")
+        public CachedPrinterConfigService(ServiceOptions serviceOptions, string cacheFileLocation = "cached_printers.json")
         {
+            this.ServiceOptions = serviceOptions;
             this.cacheFileLocation = cacheFileLocation;
             this.Load();
         }
@@ -38,11 +39,6 @@ namespace ErpNet.FP.Core.Service
                 {
                     try
                     {
-                        var transport = ReflectiveEnumerator
-                                .GetEnumerableOfType<Transport>()
-                                .First(t => t.TransportName.Equals(pair.Value.transport))
-                            ;
-
                         IChannel channel = null;
                         switch (pair.Value.transport)
                         {
@@ -55,7 +51,7 @@ namespace ErpNet.FP.Core.Service
                             case "tcp":
                                 channel = new ComTransport.Channel(
                                     pair.Value.transportsInfo.tcpHostName,
-                                    (int)pair.Value.transportsInfo.tcpPort.Value
+                                    pair.Value.transportsInfo.tcpPort.Value
                                 );
                                 break;
                             default:
@@ -72,7 +68,7 @@ namespace ErpNet.FP.Core.Service
                             pair.Value.driverName,
                             pair.Value.info,
                             channel,
-                            pair.Value.serviceOptions,
+                            this.ServiceOptions,
                             pair.Value.options
                         );
 
@@ -133,6 +129,8 @@ namespace ErpNet.FP.Core.Service
                 Log.Error($"Error occurred when saving printers cache: {e.Message}");
             }
         }
+
+        public ServiceOptions ServiceOptions { get; }
     }
 
     class TransportsInfo

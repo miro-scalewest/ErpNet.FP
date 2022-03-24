@@ -183,8 +183,7 @@ function applyChanges(serialNumber) {
     for (var poi in useOfPrinterOptions) {
         var printerOptionName = useOfPrinterOptions[poi];
         var input = document.getElementById(serialNumber + '_po_' + printerOptionName);
-        var v = input.checked;
-        if (v) {
+        if (input && input.checked) {
             printerProperties[serialNumber].printerOptions[printerOptionName] = "True";
         }
         else {

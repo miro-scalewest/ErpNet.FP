@@ -61,6 +61,7 @@ namespace ErpNet.FP.Core.Drivers
             fiscalPrinter.Info = info;
             fiscalPrinter.Info.SupportedPaymentTypes = fiscalPrinter.GetSupportedPaymentTypes();
             serviceOptions.ReconfigurePrinterConstants(fiscalPrinter.Info);
+            serviceOptions.ReconfigurePrinterOptions(fiscalPrinter.Info);
             return fiscalPrinter;
         }
 
