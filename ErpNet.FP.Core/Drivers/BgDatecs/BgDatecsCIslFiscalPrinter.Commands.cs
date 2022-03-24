@@ -1,4 +1,4 @@
-﻿namespace ErpNet.FP.Core.Drivers.BgDatecs
+namespace ErpNet.FP.Core.Drivers.BgDatecs
 {
     using System;
     using System.Collections.Generic;
@@ -46,15 +46,16 @@
             else
             {
                 header = string.Join(",",
-                    new string[]
-                    {
-                        String.IsNullOrEmpty(operatorId)
-                            ? Options.ValueOrDefault("Operator.ID", "1")
-                            : operatorId,
-                        String.IsNullOrEmpty(operatorId)
-                            ? Options.ValueOrDefault("Operator.Password", "1")
-                                .WithMaxLength(Info.OperatorPasswordMaxLength)
-                            : operatorPassword,
+                    new string[] {
+                    String.IsNullOrEmpty(operatorId) ?
+                        Options.ValueOrDefault("Operator.ID", "1")
+                        :
+                        operatorId,
+                    String.IsNullOrEmpty(operatorId) ?
+                        Options.ValueOrDefault("Operator.Password", "1").WithMaxLength(Info.OperatorPasswordMaxLength)
+                        :
+                        operatorPassword,
+                    uniqueSaleNumber,
                         "1"
                     });
             }
