@@ -356,7 +356,6 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             var startDateString = startDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
             var endDateString = endDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
             var headerData = string.Join(",", startDateString, endDateString);
-            Console.WriteLine("Datecs C: " + headerData);
 
             return Request(
                 type == ReportType.Brief
@@ -368,14 +367,20 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
 
         public override (string, DeviceStatus) SetInvoice(Invoice invoice)
         {
+            var addressLines = invoice.ClientAddress.Substring(0, Info.CommentTextMaxLength);
+            if (invoice.ClientAddress.Length > Info.CommentTextMaxLength)
+            {
+                addressLines += "\n" + invoice.ClientAddress.Substring(Info.CommentTextMaxLength, Info.CommentTextMaxLength);
+            }
+
             var clientData = string.Join("\t",
                 invoice.UID,
-                ((int)invoice.Type).ToString(),
-                invoice.SellerName,
-                invoice.ReceiverName,
-                invoice.BuyerName,
-                invoice.VatNumber,
-                invoice.ClientAddress
+                ((int) invoice.Type).ToString(),
+                invoice.SellerName.WithMaxLength(Info.CommentTextMaxLength),
+                invoice.ReceiverName.WithMaxLength(Info.CommentTextMaxLength),
+                invoice.BuyerName.WithMaxLength(Info.CommentTextMaxLength),
+                invoice.VatNumber.WithMaxLength(Info.CommentTextMaxLength),
+                addressLines
             );
 
             return Request(

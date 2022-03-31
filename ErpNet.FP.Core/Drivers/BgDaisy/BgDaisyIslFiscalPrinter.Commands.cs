@@ -74,15 +74,15 @@ namespace ErpNet.FP.Core.Drivers.BgDaisy
 
                 if (invoice.SellerName.Length > 0)
                 {
-                    clientData.Append('\t').Append(invoice.SellerName);
+                    clientData.Append('\t').Append(invoice.SellerName.WithMaxLength(Info.CommentTextMaxLength));
 
                     if (invoice.ReceiverName.Length > 0)
                     {
-                        clientData.Append('\t').Append(invoice.ReceiverName);
+                        clientData.Append('\t').Append(invoice.ReceiverName.WithMaxLength(Info.CommentTextMaxLength));
 
                         if (invoice.BuyerName.Length > 0)
                         {
-                            clientData.Append('\t').Append(invoice.BuyerName);
+                            clientData.Append('\t').Append(invoice.BuyerName.WithMaxLength(Info.CommentTextMaxLength));
 
                             if (invoice.ClientAddress.Length > 0)
                             {

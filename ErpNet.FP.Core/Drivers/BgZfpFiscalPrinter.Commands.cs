@@ -162,11 +162,11 @@
 
         public virtual (string, DeviceStatus) OpenInvoiceReceipt(Receipt receipt)
         {
-            var receiver = receipt.Invoice?.ReceiverName.PadRight(26, ' ');
-            var buyerName = receipt.Invoice?.BuyerName.PadRight(16, ' ');
-            var vatNumber = receipt.Invoice?.VatNumber.PadRight(13, ' ');
-            var uidNumber = receipt.Invoice?.UID.PadRight(13, ' ');
-            var clientAddress = receipt.Invoice?.ClientAddress.PadRight(30, ' ');
+            var receiver = receipt.Invoice != null ? receipt.Invoice?.ReceiverName.WithMaxLength(26).PadRight(26, ' ') : "";
+            var buyerName = receipt.Invoice != null ? receipt.Invoice?.BuyerName.WithMaxLength(16).PadRight(16, ' ') : "";
+            var vatNumber = receipt.Invoice != null ? receipt.Invoice?.VatNumber.WithMaxLength(13).PadRight(13, ' ') : "";
+            var uidNumber = receipt.Invoice != null ? receipt.Invoice?.UID.WithMaxLength(13).PadRight(13, ' ') : "";
+            var clientAddress = receipt.Invoice != null ? receipt.Invoice?.ClientAddress.WithMaxLength(30).PadRight(30, ' ') : "";
 
             // Protocol: <OperNum[1..2]> <;> <OperPass[6]> <;> <reserved['0']> <;> <reserved['0']> <;>
             // <InvoicePrintType[1]> <;> <Recipient[26]> <;> <Buyer[16]> <;> <VATNumber[13]> <;>
@@ -185,11 +185,11 @@
                 // but there are problems with read timeout because
                 // the Fiscal Device becomes non-responsable when
                 // there are many rows to be printed.
-                receiver, // Recipient
-                buyerName, // Buyer
-                vatNumber, // VAT Number
-                uidNumber, // UIC
-                clientAddress, // Address
+                receiver ?? "", // Recipient
+                buyerName ?? "", // Buyer
+                vatNumber ?? "", // VAT Number
+                uidNumber ?? "", // UIC
+                clientAddress ?? "", // Address
                 ((int) (receipt.Invoice?.Type == null ? 0 : receipt.Invoice.Type)) // Type
                 + "$" + receipt.UniqueSaleNumber // Delimiter '$' before USN.
             });

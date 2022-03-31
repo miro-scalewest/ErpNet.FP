@@ -2,6 +2,7 @@ namespace ErpNet.FP.Core.Drivers
 {
     using System;
     using System.Globalization;
+    using System.Linq;
     using System.Numerics;
     using System.Text;
     using Serilog;
@@ -384,19 +385,24 @@ namespace ErpNet.FP.Core.Drivers
             }
 
             uid += invoice.UID;
+            var addressLines = invoice.ClientAddress.Substring(0, 28);
+            if (invoice.ClientAddress.Length > 28)
+            {
+                addressLines += "\n" + invoice.ClientAddress.Substring(28, 34);
+            }
 
             var clientData = (new StringBuilder())
                 .Append(uid)
                 .Append('\t')
-                .Append(invoice.SellerName)
+                .Append(invoice.SellerName.WithMaxLength(26))
                 .Append('\t')
-                .Append(invoice.ReceiverName)
+                .Append(invoice.ReceiverName.WithMaxLength(26))
                 .Append('\t')
-                .Append(invoice.BuyerName)
+                .Append(invoice.BuyerName.WithMaxLength(26))
                 .Append('\t')
                 .Append(invoice.VatNumber)
                 .Append('\t')
-                .Append(invoice.ClientAddress)
+                .Append(addressLines)
             ;
 
             return Request(

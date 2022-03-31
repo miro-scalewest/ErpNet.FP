@@ -129,12 +129,18 @@ namespace ErpNet.FP.Core.Drivers.BgEltrade
 
         public override (string, DeviceStatus) SetInvoice(Invoice invoice)
         {
+            var addressLines = invoice.ClientAddress.Substring(0, 36);
+            if (invoice.ClientAddress.Length > 36)
+            {
+                addressLines += "\n" + invoice.ClientAddress.Substring(36, 36);
+            }
+
             var clientData = (new StringBuilder()).Append(invoice.UID)
-                .Append('\t').Append(!String.IsNullOrEmpty(invoice.SellerName) ? invoice.SellerName : "")
-                .Append('\t').Append(!String.IsNullOrEmpty(invoice.ReceiverName) ? invoice.ReceiverName : "")
-                .Append('\t').Append(!String.IsNullOrEmpty(invoice.BuyerName) ? invoice.BuyerName : "")
+                .Append('\t').Append(!String.IsNullOrEmpty(invoice.SellerName) ? invoice.SellerName.WithMaxLength(26) : "")
+                .Append('\t').Append(!String.IsNullOrEmpty(invoice.ReceiverName) ? invoice.ReceiverName.WithMaxLength(26) : "")
+                .Append('\t').Append(!String.IsNullOrEmpty(invoice.BuyerName) ? invoice.BuyerName.WithMaxLength(26) : "")
                 .Append('\t').Append(!String.IsNullOrEmpty(invoice.VatNumber) ? invoice.VatNumber : "")
-                .Append('\t').Append(!String.IsNullOrEmpty(invoice.ClientAddress) ? invoice.ClientAddress : "")
+                .Append('\t').Append(!String.IsNullOrEmpty(addressLines) ? addressLines : "")
             ;
 
 
