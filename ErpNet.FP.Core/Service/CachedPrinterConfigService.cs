@@ -49,7 +49,7 @@ namespace ErpNet.FP.Core.Service
                                 );
                                 break;
                             case "tcp":
-                                channel = new ComTransport.Channel(
+                                channel = new TcpTransport.Channel(
                                     pair.Value.transportsInfo.tcpHostName,
                                     pair.Value.transportsInfo.tcpPort.Value
                                 );
