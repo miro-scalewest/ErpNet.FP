@@ -157,7 +157,7 @@
                 catch (Exception ex)
                 {
                     Log.Information($"Error while opening {serialPort.PortName}: {ex.Message}. Trying baudrate {MinimalBaudRate}...");
-                    serialPort.Dispose();           // Dispose and get new SerialPort object before trying new speed
+                    serialPort.Close();           // Dispose and get new SerialPort object before trying new speed
                     serialPort = GetNewSerialPort();
                     idleTimer.Change(DefaultTimeoutToClose, 0);
                     // Trying to open the port at minimal baudrate
@@ -171,7 +171,7 @@
                 Log.Information($"Closing the com port {this.portName}");
                 if (serialPort != null)
                 {
-                    serialPort.Dispose();
+                    serialPort.Close();
                     serialPort = null;
                 }
             }
