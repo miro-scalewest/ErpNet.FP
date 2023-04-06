@@ -17,8 +17,10 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             CommandPrintBriefReportForDate = 0x4F,
             CommandPrintDetailedReportForDate = 0x5E,
             CommandDatecsOpenReversalReceipt = 0x2e,
+            CommandEJInfo = 0x7d,
             CommandGetInvoiceRange = 0x42,
             CommandSetInvoiceRange = 0x42;
+        private const char PayloadSeparator = ',';
 
         public override (string, DeviceStatus) OpenReceipt(
             string uniqueSaleNumber,
@@ -220,6 +222,15 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
             }
 
             return Request(CommandDatecsOpenReversalReceipt, header);
+        }
+
+        public override DeviceStatus PrintFiscalCopy(CopyInfo copyInfo)
+        {
+            var payload = string.Join(PayloadSeparator, "3", copyInfo.SlipId.ToString(), "0");
+            
+            var (_, result) = Request(CommandEJInfo, payload);
+
+            return result;
         }
 
         public override IDictionary<PaymentType, string> GetPaymentTypeMappings()

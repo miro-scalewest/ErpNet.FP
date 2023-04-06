@@ -121,6 +121,8 @@ namespace ErpNet.FP.Core.Drivers
 
         public abstract (ReceiptInfo, DeviceStatus) PrintReversalReceipt(ReversalReceipt reversalReceipt);
 
+        public abstract DeviceStatus PrintFiscalCopy(CopyInfo copyInfo);
+
         public virtual (bool, DeviceStatus) InvoiceRangeCheck()
         {
             var range = GetInvoiceRange();

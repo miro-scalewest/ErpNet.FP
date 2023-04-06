@@ -34,6 +34,7 @@
             CommandPrintDetailedReportForDate = 0x7a,
             CommandGetInvoiceRange = 0x70,
             CommandSetInvoiceRange = 0x50,
+            CommandEJInfo = 0x7c,
             CommandGSCommand = 0x1d;
 
         protected const byte
@@ -389,7 +390,6 @@
             var startDateString = startDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
             var endDateString = endDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
             var headerData = string.Join(";", startDateString, endDateString);
-            Console.WriteLine("Tremol: " + headerData);
 
             return Request(
                 type == ReportType.Brief
@@ -397,6 +397,16 @@
                     : CommandPrintDetailedReportForDate,
                 headerData
             );
+        }
+
+        public override DeviceStatus PrintFiscalCopy(CopyInfo copyInfo)
+        {
+            var paddedNumber = copyInfo.SlipId.ToString().PadLeft(6, '0');
+            var payload = string.Join(";", "J1", "N", paddedNumber, paddedNumber);
+            
+            var (_, result) = Request(CommandEJInfo, payload);
+
+            return result;
         }
 
         public virtual (string, DeviceStatus) GetRawDeviceInfo()

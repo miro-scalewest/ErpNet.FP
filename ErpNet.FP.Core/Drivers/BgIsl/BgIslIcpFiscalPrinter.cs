@@ -26,5 +26,9 @@
             };
         }
 
+        public override DeviceStatus PrintFiscalCopy(CopyInfo copyInfo)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

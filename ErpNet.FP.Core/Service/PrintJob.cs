@@ -21,6 +21,7 @@ namespace ErpNet.FP.Core.Service
         Reset,
         SetInvoiceNumberRange,
         GetInvoiceNumberRange,
+        PrintFiscalCopy,
     }
 
     public delegate object Run(object document);
@@ -178,6 +179,13 @@ namespace ErpNet.FP.Core.Service
                                 dateTimeDocument.DeviceDateTime = DateTime.Now;
                             }
                             Result = Printer.SetDateTime(dateTimeDocument);
+                        }
+                        break;
+                    case PrintJobAction.PrintFiscalCopy:
+                        if (Document != null)
+                        {
+                            var copyInfo = (CopyInfo) Document;
+                            Result = Printer.PrintFiscalCopy(copyInfo);
                         }
                         break;
                     case PrintJobAction.Duplicate:

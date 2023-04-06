@@ -19,6 +19,7 @@ namespace ErpNet.FP.Core.Drivers.BgDaisy
             CommandPrintDetailedReportForDate       = 0x5E,
             DaisyCommandFiscalReceiptSaleDepartment = 0x8A,
             DaisyCommandSetParameter                = 0x96,
+            CommandEJInfo                           = 0xc3,
             DaisyCommandGetParameter                = 0x96;
 
         public override (string, DeviceStatus) AddItem(
@@ -333,6 +334,15 @@ namespace ErpNet.FP.Core.Drivers.BgDaisy
             }
 
             return (receiptInfo, deviceStatus);
+        }
+
+        public override DeviceStatus PrintFiscalCopy(CopyInfo copyInfo)
+        {
+            var payload = string.Join(",", "R1", copyInfo.SlipId.ToString(), copyInfo.SlipId.ToString());
+            
+            var (_, result) = Request(CommandEJInfo, payload);
+
+            return result;
         }
 
         public override (string, DeviceStatus) GetTaxIdentificationNumber()

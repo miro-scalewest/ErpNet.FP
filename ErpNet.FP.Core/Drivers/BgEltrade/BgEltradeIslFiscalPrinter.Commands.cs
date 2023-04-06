@@ -566,6 +566,17 @@ namespace ErpNet.FP.Core.Drivers.BgEltrade
             );
         }
 
+        public override DeviceStatus PrintFiscalCopy(CopyInfo copyInfo)
+        {
+            throw new NotImplementedException();
+            // Not implemented
+            // var payload = string.Join(",", "R1", copyInfo.SlipId.ToString(), "");
+            
+            // var (_, result) = Request(, payload);
+
+            // return result;
+        }
+
         // 6 Bytes x 8 bits
         protected static readonly (string?, string, StatusMessageType)[] StatusBitsStrings = new (string?, string, StatusMessageType)[] {
             ("E401", "Incoming data has syntax error", StatusMessageType.Error),

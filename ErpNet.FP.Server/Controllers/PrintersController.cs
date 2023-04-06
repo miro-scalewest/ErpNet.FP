@@ -512,5 +512,35 @@ namespace ErpNet.FP.Server.Controllers
             }
             return NotFound();
         }
+
+        // POST {id}/printcopy
+        [HttpPost("{id}/printcopy")]
+        public async Task<IActionResult> PrintFiscalCopy(
+            string id,
+            [FromBody] CopyInfo copyInfo,
+            [FromQuery] string? taskId,
+            [FromQuery] string? timeout,
+            [FromQuery] int asyncTimeout = PrintJob.DefaultTimeout)
+        {
+            if (!context.IsReady)
+            {
+                return StatusCode(StatusCodes.Status405MethodNotAllowed);
+            }
+            if (context.Printers.TryGetValue(id, out IFiscalPrinter? printer))
+            {
+                var result = await context.RunAsync(
+                    new PrintJob
+                    {
+                        Printer = printer,
+                        Action = PrintJobAction.PrintFiscalCopy,
+                        Document = copyInfo,
+                        AsyncTimeout = asyncTimeout,
+                        Timeout = timeout?.ParseTimeout() ?? 0,
+                        TaskId = taskId
+                    });
+                return Ok(result);
+            }
+            return NotFound();
+        }
     }
 }

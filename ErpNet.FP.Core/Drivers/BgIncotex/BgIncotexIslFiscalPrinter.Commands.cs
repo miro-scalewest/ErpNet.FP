@@ -51,6 +51,11 @@ namespace ErpNet.FP.Core.Drivers.BgIncotex
             }
         }
 
+        public override DeviceStatus PrintFiscalCopy(CopyInfo copyInfo)
+        {
+            throw new NotImplementedException();
+        }
+
         public override (string, DeviceStatus) GetFiscalMemorySerialNumber()
         {
             var (rawDeviceInfo, deviceStatus) = GetRawDeviceInfo();

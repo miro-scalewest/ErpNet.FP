@@ -148,5 +148,12 @@ namespace ErpNet.FP.Core
         /// </summary>
         /// <returns></returns>
         DeviceStatusWithInvoiceRange GetInvoiceRange();
+
+
+        /// <summary>
+        /// Prints fiscal copy from the fiscal memory
+        /// </summary>
+        /// <returns></returns>
+        DeviceStatus PrintFiscalCopy(CopyInfo copyInfo);
     }
 }

@@ -15,6 +15,7 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
            DatecsXCommandOpenStornoDocument = 0x2b,
            CommandGetInvoiceRange = 0x67,
            CommandSetInvoiceRange = 0x42,
+           CommandEJInfo = 0x7d,
            Programming = 0xff;
 
         public override IDictionary<PaymentType, string> GetPaymentTypeMappings()
@@ -541,6 +542,15 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
                 }
                 CheckPinpadResponse(result.response.Split('\t')[0], result.status);
             }
+            return result;
+        }
+
+        public override DeviceStatus PrintFiscalCopy(CopyInfo copyInfo)
+        {
+            var payload = string.Join("\t", "3", copyInfo.SlipId.ToString(), "0");
+            
+            var (_, result) = Request(CommandEJInfo, payload);
+
             return result;
         }
 
