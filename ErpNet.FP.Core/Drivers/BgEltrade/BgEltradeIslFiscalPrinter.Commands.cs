@@ -569,7 +569,7 @@ namespace ErpNet.FP.Core.Drivers.BgEltrade
         public override DeviceStatus PrintFiscalCopy(CopyInfo copyInfo)
         {
             var result = new DeviceStatus();
-            result.AddError("E203", "Eltrade does not support copy printing");
+            result.AddError("E198", "Eltrade does not support copy printing");
 
             return result;
         }

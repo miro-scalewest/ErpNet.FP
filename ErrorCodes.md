@@ -24,6 +24,7 @@ However, the "originalCode" might not always be available or it might change due
 * **E108** Device busy with another connection
 * **E109** Duplicated Task Id
 * **E110** Invalid Task Id
+* **E198** Device not supported
 * **E199** Device general error
 
 ## Fiscal memory and journal error codes
