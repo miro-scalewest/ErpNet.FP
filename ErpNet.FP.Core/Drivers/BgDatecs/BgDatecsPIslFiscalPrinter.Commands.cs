@@ -416,7 +416,7 @@ namespace ErpNet.FP.Core.Drivers.BgDatecs
 
         public override DeviceStatus PrintFiscalCopy(CopyInfo copyInfo)
         {
-            var payload = string.Join(PayloadSeparator, "P", ">", "A", copyInfo.SlipId.ToString());
+            var payload = string.Join(PayloadSeparator, "P", ">#A", copyInfo.SlipId.ToString());
             
             var (_, result) = Request(CommandEJInfo, payload);
             
