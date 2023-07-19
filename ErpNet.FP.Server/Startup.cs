@@ -80,7 +80,7 @@
             services.AddControllers().AddNewtonsoftJson();
 
             // KeepAliveHostedService will warm up ServiceSingleton context at start
-            services.AddHostedService<KeepAliveHostedService>();
+            // services.AddHostedService<KeepAliveHostedService>();
         }
 
         public IConfiguration Configuration { get; }

@@ -24,9 +24,14 @@ namespace ErpNet.FP.Core.Transports
             if (openedChannels.TryGetValue(address, out Channel? channel))
             {
                 if (channel != null)
+                {
+                    Log.Information("Opened port " + address);
                     return channel;
+                }
                 else
+                {
                     openedChannels.Remove(address);
+                }
             }
             var (comPort, baudRate) = ParseAddress(address);
             channel = new Channel(comPort, baudRate);
@@ -68,7 +73,7 @@ namespace ErpNet.FP.Core.Transports
             internal /*readonly*/ SerialPort? serialPort;    // can be disposed and created multiple times
             public string portName;
             public int baudRate;
-            protected Timer idleTimer;
+            protected Timer idleTimer = null;
             protected const int MinimalBaudRate = 9600;
             public string TransportName => (new ComTransport()).TransportName;
 
@@ -90,7 +95,7 @@ namespace ErpNet.FP.Core.Transports
 
             public SerialPort GetNewSerialPort(int timeout = DefaultTimeout)
             {
-                idleTimer.Change(DefaultTimeoutToClose, 0);
+                // idleTimer.Change(DefaultTimeoutToClose, 0);
                 return new SerialPort
                 {
                     // Allow the user to set the appropriate properties.
@@ -109,8 +114,8 @@ namespace ErpNet.FP.Core.Transports
                 this.baudRate = baudRate;
 
                 serialPort = null;  // GetNewSerialPort();
-                idleTimer = new Timer(IdleTimerElapsed); 
-                idleTimer.Change(DefaultTimeoutToClose, 0);
+                // idleTimer = new Timer(IdleTimerElapsed); 
+                // idleTimer.Change(DefaultTimeoutToClose, 0);
             }
 
             private void IdleTimerElapsed(object state)
@@ -132,8 +137,11 @@ namespace ErpNet.FP.Core.Transports
             public void Open()
             {
                 if (serialPort == null)
+                {
                     serialPort = GetNewSerialPort();
-                idleTimer.Change(DefaultTimeoutToClose, 0);
+                    Log.Information($"Getting new port {serialPort.PortName}");
+                }
+                // idleTimer.Change(DefaultTimeoutToClose, 0);
 
                 try
                 {
@@ -143,7 +151,9 @@ namespace ErpNet.FP.Core.Transports
                         Log.Information($"Opening the com port {serialPort.PortName}");
                     }
                     else
+                    {
                         Log.Information($"Com port {serialPort.PortName} allready opened!");
+                    }
                 }
                 catch (FileNotFoundException)
                 {
@@ -157,12 +167,12 @@ namespace ErpNet.FP.Core.Transports
                 catch (Exception ex)
                 {
                     Log.Information($"Error while opening {serialPort.PortName}: {ex.Message}. Trying baudrate {MinimalBaudRate}...");
-                    serialPort.Close();           // Dispose and get new SerialPort object before trying new speed
+                    serialPort.Close(); // Dispose and get new SerialPort object before trying new speed
                     serialPort = GetNewSerialPort();
-                    idleTimer.Change(DefaultTimeoutToClose, 0);
+                    // idleTimer.Change(DefaultTimeoutToClose, 0);
                     // Trying to open the port at minimal baudrate
-                    serialPort.BaudRate = MinimalBaudRate;  
-                    serialPort.Open();  // will throw another exception if not working with MinimalBaudRate
+                    serialPort.BaudRate = MinimalBaudRate;
+                    serialPort.Open(); // will throw another exception if not working with MinimalBaudRate
                 }
             }
 
@@ -179,7 +189,7 @@ namespace ErpNet.FP.Core.Transports
             //    not called ever
             public void Dispose()
             {
-                idleTimer.Dispose();
+                idleTimer?.Dispose();
                 Close();
             }
 
@@ -189,7 +199,7 @@ namespace ErpNet.FP.Core.Transports
             /// <returns>The data which was read.</returns>
             public byte[] Read()
             {
-                idleTimer.Change(-1, 0);
+                idleTimer?.Change(-1, 0);
                 if (serialPort == null)
                 {
                     throw new FileNotFoundException("Can't read from unexistent serial port!");
@@ -200,10 +210,10 @@ namespace ErpNet.FP.Core.Transports
                 {
                     var result = new byte[task.Result];
                     Array.Copy(buffer, result, task.Result);
-                    idleTimer.Change(DefaultTimeoutToClose, 0);
+                    idleTimer?.Change(DefaultTimeoutToClose, 0);
                     return result;
                 }
-                idleTimer.Change(DefaultTimeoutToClose, 0);
+                idleTimer?.Change(DefaultTimeoutToClose, 0);
                 var errorMessage = $"Timeout occured while reading from com port '{serialPort.PortName}'";
                 Log.Error(errorMessage);
                 try
@@ -225,7 +235,7 @@ namespace ErpNet.FP.Core.Transports
                 Monitor.Enter(this);
                 try
                 {
-                    idleTimer.Change(-1, 0);
+                    // idleTimer.Change(-1, 0);
                     Open();
 
                     if (serialPort == null)
@@ -246,13 +256,13 @@ namespace ErpNet.FP.Core.Transports
                         if (task.Wait(serialPort.WriteTimeout))
                         {
                             bytesToWrite -= writeSize;
-                            idleTimer.Change(DefaultTimeoutToClose, 0);
+                            // idleTimer.Change(DefaultTimeoutToClose, 0);
                         }
                         else
                         {
                             var errorMessage = $"Timeout occured while writing to com port '{serialPort.PortName}'";
                             Log.Error(errorMessage);
-                            idleTimer.Change(DefaultTimeoutToClose, 0);
+                            // idleTimer.Change(DefaultTimeoutToClose, 0);
                             throw new TimeoutException(errorMessage);
                         }
                     }
